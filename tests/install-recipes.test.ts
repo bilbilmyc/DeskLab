@@ -164,7 +164,7 @@ ConvertTo-Json -InputObject @($result) -Compress`;
     expect(seed.command).toContain('start "" /b powershell.exe');
     expect(seed.command).toContain('-File %d:\\Finish.ps1');
   }
-});
+}, 30000); // Hosted Windows can spend several seconds cold-starting PowerShell.
 
 const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : '/bin/bash';
 test.skipIf(!existsSync(bash))('generated Linux finish and installer shell hooks pass Bash syntax checks', ()=>{

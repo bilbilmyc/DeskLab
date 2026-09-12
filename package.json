@@ -1,6 +1,6 @@
 {
   "name": "desk-lab",
-  "version": "0.3.6",
+  "version": "1.0.0-rc1",
   "private": true,
   "type": "module",
   "scripts": {

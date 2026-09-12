@@ -37,7 +37,11 @@ UsePreviousAppDir=not IsIsolatedTest
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Types]
+#ifdef DockerEngineDir
 Name: "full"; Description: "完整安装（虚拟机和独立 Docker 引擎）"
+#else
+Name: "full"; Description: "标准安装（虚拟机和外部 Docker 连接）"
+#endif
 Name: "compact"; Description: "基础安装（虚拟机和外部 Docker 连接）"
 Name: "custom"; Description: "自定义安装"; Flags: iscustom
 

@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(desklab_tapctl C)
+if(NOT OPENVPN_SOURCE)
+  message(FATAL_ERROR "Pass OPENVPN_SOURCE pointing to the pinned OpenVPN source")
+endif()
+add_executable(tapctl "${OPENVPN_SOURCE}/src/tapctl/main.c" "${OPENVPN_SOURCE}/src/tapctl/tap.c" "${OPENVPN_SOURCE}/src/tapctl/error.c")
+target_compile_definitions(tapctl PRIVATE _UNICODE UNICODE PACKAGE_NAME="tapctl" PACKAGE_VERSION="2.7.7" TAP_WIN_COMPONENT_ID="tap0901" _WIN32_WINNT=0x0600)
+target_link_libraries(tapctl PRIVATE advapi32 ole32 setupapi newdev)

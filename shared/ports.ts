@@ -1,0 +1,2 @@
+export interface PortMapping {id:string;ownerType:'vm'|'docker';ownerId:string;engineId?:string;label:string;protocol:'tcp'|'udp';hostAddress:string;hostPort:number;targetPort:number;guestPort?:number;appliedState?:string;lastError?:string;createdAt:string;}
+export interface PortView extends PortMapping {ownerName:string;source:'ssh'|'vm'|'docker';status:'running'|'stopped'|'unknown';editable:boolean;}

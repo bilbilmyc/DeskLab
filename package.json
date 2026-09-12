@@ -1,0 +1,37 @@
+{
+  "name": "desk-lab",
+  "version": "0.3.6",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "bun scripts/build/bootstrap.ts",
+    "postinstall": "bun run prepare",
+    "qemu:prepare": "bun scripts/build/prepare-qemu.ts",
+    "dev": "bun scripts/dev.ts",
+    "build": "bun scripts/build/web.ts",
+    "start": "bun server/index.ts",
+    "typecheck": "bun --bun tsc --noEmit",
+    "test": "bun test tests",
+    "package": "bun scripts/build/package.ts",
+    "installer": "bun scripts/build/installer.ts",
+    "smoke": "bun scripts/checks/smoke.ts",
+    "test:api": "bun scripts/checks/api-smoke.ts",
+    "tray:build": "bun scripts/build/build-tray.ts"
+  },
+  "dependencies": {
+    "@novnc/novnc": "1.7.0",
+    "lucide-react": "1.45.0",
+    "next": "16.3.4",
+    "node-forge": "1.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.2"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "@types/node-forge": "^1.3.14",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2"
+  }
+}

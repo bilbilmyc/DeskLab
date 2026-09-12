@@ -1,0 +1,18 @@
+DeskLab 模板说明
+
+安装包不包含 Windows/Linux 客体 ISO 或用户虚拟机模板磁盘。完整构建另外附带独立 Docker 引擎的预装 Linux 组件；基础构建没有该组件。
+
+开始使用：
+1. 打开 DeskLab，进入“模板库”，选择需要的系统。
+2. 按界面提示下载 ISO 安装盘并准备系统。
+3. 在环境里装好自己的软件，正常关机后点“保存为模板”，下次就能直接复用。
+
+当前支持自动安装的系统：Ubuntu Server、Debian Server、Rocky Linux Server、Windows 10 Enterprise 和 Windows Server 2022。选择这些系统并备好 ISO 后，可按界面提示自动安装。其他 Linux 桌面系统需手动安装，或从已保存的模板创建。
+
+目录说明：
+- iso：安装盘的默认存放位置，可在 DeskLab 本机设置中更改。下载记录保存在所选 ISO 目录的 .desklab-downloads 中。
+- data：环境磁盘、程序配置，以及 data/templates 中的自定义模板。
+- templates：本说明与 builtin-catalogue.json，小体积的内置模板目录参考。修改该 JSON 不会更改程序中的系统或账户；请在 DeskLab 界面管理模板。
+
+升级程序不会覆盖 data 或 iso 中的用户内容。卸载时这些目录及模板说明会保留，方便重新安装或迁移。
+复制或备份整个安装目录前，请正常关闭所有环境并退出 DeskLab。

@@ -1,0 +1,22 @@
+/* A modest readability increase, independent of screen resolution and OS scaling. */
+:root{--line:#c8d1df;--muted:#536077;--ink:#202638}
+body{font-weight:500}
+p,small,.field-help,.muted,.notice,.status,.breadcrumb,.host-chip,.machine-attributes,.machine-identity>small,.engine-brief,.computer-description,.iso-card-meta,.iso-card-note,.tpl-card-specs,.tpl-card-copy p{font-weight:500}
+label,summary,nav button,.text-button,.filters button,.filters select{font-weight:600}
+input,select,textarea{font-weight:500}
+.tpl-results .tpl-card,.tpl-workspace,.settings-workspace,.machine-board,.docker-resource-workspace,.unified-workspace .ports-panel,.first-environment,.quick-guide{border-width:2px}
+.tpl-results .tpl-card:has(.tpl-badge-ready){border-top-width:2px}
+.tpl-results .tpl-card:hover{border-color:#8495ad}
+.unified-workspace .machine-card,.docker-results .container-row{border-bottom-color:var(--line)}
+.workspace-heading h1,.docker-title h1{font-weight:700}
+.workspace-heading p,.tpl-section-heading p,.tpl-results .tpl-card-copy p,.computer-description,.settings-results .computer-description,.field-help{font-size:13px}
+.machine-attributes,.machine-identity>small,.docker-results .container-copy p,.docker-results .container-copy small,.engine-brief,.iso-card-identity .iso-card-meta,.settings-results .iso-card-note,.tpl-results .tpl-card-specs,.storage-paths dt{font-size:12px}
+.machine-name-line h3,.docker-results .container-copy h3,.tpl-results .tpl-card-copy h3,.iso-card-identity h3{font-size:14px;font-weight:650}
+.instance-resources{margin:20px 0;padding:14px;border:1.5px solid var(--line);border-radius:6px;background:var(--paper);min-width:0}
+.instance-resources legend{font-size:14px;font-weight:650;padding:0 6px}
+.instance-resources .form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.instance-resources .field-help{font-size:12px;line-height:1.8}
+.instance-resources label{font-size:12px}
+.instance-resources input{background:var(--surface);min-width:0;width:100%}
+.modal{border:1px solid var(--line)}
+@media(max-width:600px){.instance-resources{padding:10px}.instance-resources .form-grid{grid-template-columns:1fr}.instance-resources label{margin:8px 0}.workspace-heading p{font-size:12px}}

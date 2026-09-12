@@ -1,0 +1,47 @@
+/* Keep the creation actions reachable without shrinking the shared typography. */
+.create-dialog[open]{display:flex;flex-direction:column;width:min(860px,calc(100vw - 2rem));max-height:calc(100dvh - 2rem);padding:0;overflow:hidden}
+.create-dialog .modal-head{flex:none;margin:0;padding:1.25rem 1.5rem .5rem;align-items:center}
+.create-dialog>.creation-steps{flex:none;margin:0;padding:0 1.5rem 1rem;border-bottom:1px solid var(--line)}
+.create-dialog-form{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.create-dialog-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:1.25rem 1.5rem;scroll-padding:1rem}
+.create-dialog .modal-foot{flex:none;padding:1rem 1.5rem;margin:0;background:var(--surface)}
+.create-dialog-actions{flex:none;min-width:0}
+.create-dialog-actions .form-error{margin:0;padding:.75rem 1.5rem;max-height:6rem;overflow:auto}
+.create-system-summary{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+.create-system-summary>svg{flex:none;color:var(--accent)}
+.create-system-summary>div{flex:1;min-width:0}
+.create-system-summary strong{font-size:.9rem;overflow-wrap:anywhere}
+.create-system-summary p{font-size:.75rem;margin-top:.25rem}
+.create-system-summary .text-button{flex:none;margin:0;font-size:.75rem}
+.create-config-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.5rem;align-items:start}
+.create-basics{min-width:0}
+.create-basics>label:first-child{margin-top:0}
+.create-basics .image-path-row{gap:.5rem}
+.create-basics .image-path-row .button{padding:.6rem .65rem}
+.create-dialog .instance-resources{min-width:0;margin:0;padding:.75rem 1rem 1rem}
+.create-dialog .instance-resources .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.create-dialog .instance-resources .form-grid label{margin:0}
+.create-dialog .instance-resources .form-grid label:last-child{grid-column:1/-1}
+.create-connection{margin-top:1.25rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.75rem 0}
+.create-connection>summary{cursor:pointer;font-size:.8rem}
+.create-connection>summary .field-help{margin-left:.75rem;font-size:.75rem;color:var(--muted)}
+.create-connection .network-fields{margin:.75rem 0}
+.create-dialog .segmented{margin-top:0}
+.iso-inspection{margin-top:.75rem;padding:.75rem;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:4px}
+.iso-inspection p,.iso-inspection small{font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.iso-inspection small{display:block;margin-top:.25rem;color:var(--muted)}
+.iso-inspection.is-error{border-color:var(--red);background:var(--red-soft)}
+.iso-inspection .text-button{margin-top:.5rem;font-size:12px}
+.iso-inspection .checkbox-label{font-size:12px;align-items:flex-start;margin-top:.5rem}
+.iso-inspection input[type=checkbox]{width:auto;flex:none;margin:.25rem 0 0}
+@media(max-width:680px){
+ .create-dialog[open]{width:calc(100vw - 1rem);max-height:calc(100dvh - 1rem)}
+ .create-dialog .modal-head{padding:1rem 1rem .5rem}
+ .create-dialog>.creation-steps{padding:0 1rem .75rem}
+ .create-dialog-body{padding:1rem}
+ .create-dialog .modal-foot{padding:.75rem 1rem}
+ .create-config-grid{grid-template-columns:minmax(0,1fr);gap:1.25rem}
+ .create-system-summary{flex-wrap:wrap;gap:.5rem}
+ .create-system-summary .text-button{margin-left:0}
+ .create-connection>summary .field-help{display:block;margin:.25rem 0 0 1rem}
+}

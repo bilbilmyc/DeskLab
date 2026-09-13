@@ -1,0 +1,12 @@
+name: Verify push delivery
+'on': [push]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm automatic push event
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: test "$EVENT_NAME" = push

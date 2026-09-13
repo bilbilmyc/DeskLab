@@ -1,5 +1,7 @@
 # DeskLab
 
+[![Windows build](https://github.com/bilbilmyc/DeskLab/actions/workflows/windows-build.yml/badge.svg?branch=master)](https://github.com/bilbilmyc/DeskLab/actions/workflows/windows-build.yml)
+
 在 Windows 本机创建独立的 Windows / Linux 测试环境，通过浏览器使用桌面或终端；也可以使用 DeskLab 独立 Docker 引擎管理容器。
 
 **当前处于预发布验证阶段，不是正式生产版本。** 主分支为 `master`，当前候选分支为 [`v1.0.0-rc1`](https://github.com/bilbilmyc/DeskLab/tree/v1.0.0-rc1)。正式版时间尚未确定；候选版本通过验证后再决定是否发布，不会按日期自动转正。

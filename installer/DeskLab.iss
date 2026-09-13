@@ -5,7 +5,7 @@
   #error StageDir must contain installer metadata
 #endif
 #ifndef AppVersion
-  #define AppVersion "0.1.2"
+  #error AppVersion must be supplied from package.json by the build script
 #endif
 
 [Setup]

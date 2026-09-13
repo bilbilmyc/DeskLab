@@ -1,22 +1,27 @@
 name: Windows build
-run-name: Windows build · ${{ github.ref_name }}
-on:
+run-name: Windows build · ${{ github.ref_name }} · ${{ github.event_name }}
+'on':
   push:
-    branches: [master, 'v*-rc*']
+    branches:
+      - master
+      - 'v*-rc*'
+    tags:
+      - 'v*'
   pull_request:
     branches: [master, 'v*-rc*']
-  workflow_dispatch:
 
 permissions:
   contents: read
 concurrency:
   group: windows-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
   windows:
     runs-on: windows-2022
     timeout-minutes: 30
+    outputs:
+      artifact: ${{ steps.release-info.outputs.artifact }}
     env:
       CI: 'true'
       NEXT_TELEMETRY_DISABLED: '1'
@@ -29,6 +34,9 @@ jobs:
           bun-version: '1.3.14'
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
+      - name: Validate release version
+        id: release-info
+        run: bun scripts/build/release-info.ts
       - name: Typecheck
         run: bun run typecheck
       # No QEMU/ISO exists yet: hardware- and real-media-dependent tests skip.
@@ -52,7 +60,7 @@ jobs:
           "ARTIFACT_NAME=$artifact" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           New-Item -ItemType Directory -Force dist/release | Out-Null
           Copy-Item dist/app/DeskLab.exe dist/release/DeskLab.exe
-          Copy-Item dist/installer/DeskLab-Setup.exe dist/release/DeskLab-Setup.exe
+          Copy-Item dist/installer/DeskLab-Setup.exe "dist/release/DeskLab-Setup-v$version-windows-x64.exe"
           Copy-Item dist/installer/DeskLab-Setup.build.json dist/release/
           Copy-Item README.md,THIRD_PARTY_NOTICES.md dist/release/
           Copy-Item CHANGELOG.md,CONTRIBUTING.md dist/release/
@@ -66,3 +74,25 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+
+  release:
+    name: Publish release
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: windows
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: '1.3.14'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.windows.outputs.artifact }}
+          path: dist/release
+      - name: Publish verified installer and executable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun scripts/build/publish-release.ts

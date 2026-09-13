@@ -7,7 +7,7 @@
 ```powershell
 git clone git@github.com:bilbilmyc/DeskLab.git
 cd DeskLab
-git switch v1.0.0-rc1
+git switch master
 bun install --frozen-lockfile
 bun run typecheck
 bun test tests
@@ -40,15 +40,34 @@ bun run installer
 
 ## 云端构建做什么
 
-[Windows build 工作流](../.github/workflows/windows-build.yml)在 `master`、`v*-rc*` 的 push/PR 和手动调度时运行，固定 Windows 2022 runner 与 Bun 1.3.14：
+[Windows build 工作流](../.github/workflows/windows-build.yml)在 `master`、`v*-rc*` 的 push/PR，以及 `v*` 标签推送时自动运行，固定 Windows 2022 runner 与 Bun 1.3.14：
 
-1. 安装锁定依赖、准备生成模块、类型检查。
+1. 安装锁定依赖、准备生成模块、校验版本与标签、类型检查。
 2. 执行单元测试和仓库文档检查。此时未准备 QEMU、真实 ISO，依赖这些资源的测试按条件跳过。
 3. 下载并校验固定 QEMU，编译 Windows EXE 与基础安装包。
 4. 用临时数据目录验证成品 API、版本、内嵌网页和正常退出，不启动真实虚拟机。
-5. 上传 EXE、安装器、构建清单、SHA256 和说明，保留 14 天。
+5. 上传 EXE、带版本名的安装器、构建清单、SHA256 和说明到 Actions，保留 14 天。
+6. 仅标签推送进入发布任务：下载本次构建产物，核对安装包版本及哈希，上传 Release 草稿，核对 GitHub 附件哈希后公开发布。
 
-工作流权限仅 `contents: read`；不签名、不自动建立 tag、不创建 GitHub Release，也不把 RC 标为 stable。Action 使用不可变提交 SHA，Bun 依赖使用冻结锁文件。
+构建任务只有 `contents: read`；仅标签发布任务使用 `contents: write` 和 GitHub 自动提供的令牌，不需要保存个人 Token。Action 使用不可变提交 SHA，Bun 依赖使用冻结锁文件。分支推送不发布 Release，标签构建不会被后续推送取消；失败可在 Actions 中选择 Re-run jobs，无需创建新提交。
+
+## RC 与正式版
+
+- `v1.0.0-rc1`、`v1.0.0-rc2` 是候选版标签，Release 自动标记为 Pre-release，不设为 Latest。也支持 `v1.0.0-rc.2` 写法，但同一版本系列建议保持命名一致。
+- `v1.0.0` 是正式版标签，Release 不带 Pre-release，并由 GitHub 按版本决定 Latest；发布旧维护版本不会强制覆盖更高版本。
+- `master` 是集成分支。合并候选分支只会构建，不会自动升级版本或发布正式版；分支名与同名标签是不同的 Git 引用。
+- `package.json` 是版本唯一来源；程序界面、API、安装器及附件文件名都使用它。Windows PE 数字版本不带 RC 后缀。
+- 标签版本必须与 `package.json` 完全一致。已公开的版本不能被发布脚本覆盖；修复后应使用新版本、新标签。草稿上传失败则可以重跑。
+
+例如准备下一个候选版时，先把 `package.json` 的版本改为 `1.0.0-rc2` 并更新 `CHANGELOG.md`，提交到 `master`。推送后自动构建；通过验收后再推送标签：
+
+```powershell
+git push origin master
+git tag -a v1.0.0-rc2 -m "DeskLab v1.0.0-rc2"
+git push origin refs/tags/v1.0.0-rc2
+```
+
+标签推送后自动构建并发布候选版安装包。准备正式版时使用同样流程，把包版本改为 `1.0.0`、标签改为 `v1.0.0`。不要移动已发布的 RC 标签，也不要只修改 Release 标题来冒充正式版本。
 
 **GitHub 默认产物不含独立 Docker Linux 镜像。** 现有引擎构建依赖本机 WHPX，标准托管 runner 不作为其验收环境。普通单元测试、静态编译或基础包启动成功，不代表完整引擎和所有客体安装都已通过硬件验证。
 

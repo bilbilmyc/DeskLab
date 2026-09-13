@@ -19,7 +19,8 @@ for(const version of ['1.0.0-rc1','1.0.0'])test(`publishes ${version} only after
   await publishRelease(context,async args=>{
     calls.push(args);
     if(args.includes('--slurp'))return '[[]]';
-    if(args[1]===`repos/owner/repo/releases/tags/v${version}`)return JSON.stringify({id:123,assets});
+    if(args[0]==='release'&&args[1]==='view')return '123';
+    if(args[1]==='repos/owner/repo/releases/123')return JSON.stringify({id:123,assets});
     return '';
   });
   expect(calls[1]).toContain('--draft');
@@ -45,7 +46,8 @@ test('bad remote digest leaves the release unpublished',async()=>{
   await expect(publishRelease(context,async args=>{
     calls.push(args);
     if(args.includes('--slurp'))return '[[]]';
-    if(args[1]===`repos/owner/repo/releases/tags/v1.0.0-rc1`)return JSON.stringify({id:123,assets});
+    if(args[0]==='release'&&args[1]==='view')return '123';
+    if(args[1]==='repos/owner/repo/releases/123')return JSON.stringify({id:123,assets});
     return '';
   })).rejects.toThrow('GitHub digest mismatch');
   expect(calls.some(args=>args.includes('PATCH'))).toBe(false);

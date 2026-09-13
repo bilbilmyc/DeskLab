@@ -37,7 +37,10 @@ export async function publishRelease(context:ReleaseContext,gh:typeof runGh=runG
   await Bun.write(notes,`DeskLab ${info.tag}${info.prerelease?' 候选版本':' 正式版本'}\n\n下载 \`${info.installer}\` 安装。程序内显示 \`${info.tag}\`。\n\nWindows x64 基础包，内置 QEMU，不包含系统 ISO 或独立 Docker Linux 镜像。\n\n已通过类型检查、单元测试和成品启动/版本检查。\`SHA256SUMS.txt\` 与构建清单用于校验附件。\n\n源码提交：${sha}\n构建记录：https://github.com/${repository}/actions/runs/${runId}\n`);
   if(!existing)await gh(['release','create',info.tag,'--repo',repository,'--verify-tag','--draft','--title',`DeskLab ${info.tag}`,'--notes-file',notes,...(info.prerelease?['--prerelease']:[])]);
   await gh(['release','upload',info.tag,'--repo',repository,'--clobber',...files.map(file=>join(directory,file))]);
-  const release=JSON.parse(await gh(['api',`repos/${repository}/releases/tags/${info.tag}`])) as {id:number;assets:{name:string;state:string;digest:string}[]};
+  // The tag endpoint is for published releases; gh release view also resolves drafts.
+  const releaseId=Number(await gh(['release','view',info.tag,'--repo',repository,'--json','databaseId','--jq','.databaseId']));
+  assert.ok(Number.isSafeInteger(releaseId)&&releaseId>0,'Draft release ID is missing.');
+  const release=JSON.parse(await gh(['api',`repos/${repository}/releases/${releaseId}`])) as {id:number;assets:{name:string;state:string;digest:string}[]};
   for(const file of files) {
     const asset=release.assets.find(asset=>asset.name===file);
     assert.equal(asset?.state,'uploaded',`${file} was not uploaded.`);

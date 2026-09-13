@@ -17,6 +17,8 @@ async function fixture(mode: Mode = 'range') {
     const requested = range ? Number(/^bytes=(\d+)-$/.exec(range)?.[1]) : 0;
     const offset = current === 'ignore' ? 0 : requested;
     const headers = new Headers({ 'content-type': 'application/octet-stream', 'content-length': String(bytes.length - offset), etag: current === 'bad-etag' && offset ? '"changed"' : '"fixture-v1"' });
+    // A truncated response must close the socket instead of waiting for keep-alive expiry.
+    if (current === 'disconnect') headers.set('connection', 'close');
     if (offset) headers.set('content-range', `bytes ${current === 'bad-range' ? offset + 1 : offset}-${bytes.length - 1}/${current === 'bad-total' ? bytes.length + 1 : bytes.length}`);
     let position = offset, timer: ReturnType<typeof setTimeout> | undefined;
     const body = new ReadableStream<Uint8Array>({

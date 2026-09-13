@@ -1,4 +1,4 @@
-import {mkdir} from 'node:fs/promises';
+import {mkdir,rename,rm} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {createReadStream} from 'node:fs';
 import {createHash} from 'node:crypto';
@@ -7,12 +7,19 @@ const expected='5bcf9eed634e8575a37b74f445af41a2fe4106da512d0c30c368301d4c105037
 if(process.platform!=='win32')throw new Error('This QEMU bundle is for Windows x64 builds.');
 const archive=resolve(`.runtime/downloads/qemu-w64-setup-${release}.exe`),output=resolve('.runtime/tools/qemu');
 await mkdir(resolve('.runtime/downloads'),{recursive:true});
+async function sha512(path:string){const hash=createHash('sha512');for await(const bytes of createReadStream(path))hash.update(bytes);return hash.digest('hex');}
 if(!await Bun.file(archive).exists()){
-  const response=await fetch(url,{signal:AbortSignal.timeout(180000)});if(!response.ok)throw new Error(`QEMU download: ${response.status}`);
-  await Bun.write(archive,response);
+  const temporary=archive+'.download';
+  console.log(`Downloading pinned QEMU from ${url} (bounded timeout, up to 3 attempts).`);
+  try {
+    // Windows curl bounds the entire transfer, including a stalled response body.
+    const download=Bun.spawn(['curl.exe','--fail','--location','--show-error','--connect-timeout','30','--max-time','120','--retry','2','--retry-delay','5','--retry-all-errors','--output',temporary,url],{stdout:'inherit',stderr:'inherit',windowsHide:true});
+    if(await download.exited)throw new Error('QEMU download failed after retries.');
+    if(await sha512(temporary)!==expected)throw new Error('QEMU installer SHA-512 mismatch.');
+    await rename(temporary,archive);
+  } finally {await rm(temporary,{force:true});}
 }
-const hash=createHash('sha512');for await(const bytes of createReadStream(archive))hash.update(bytes);
-if(hash.digest('hex')!==expected)throw new Error('QEMU installer SHA-512 mismatch. Remove the cached download and retry.');
+if(await sha512(archive)!==expected)throw new Error('QEMU installer SHA-512 mismatch. Remove the cached download and retry.');
 await mkdir(output,{recursive:true});
 const extractor=Bun.which('7z')??(await Bun.file('C:/Program Files/7-Zip/7z.exe').exists()?'C:/Program Files/7-Zip/7z.exe':undefined);
 if(!extractor)throw new Error('Install 7-Zip or add 7z to PATH; extraction does not install QEMU globally.');

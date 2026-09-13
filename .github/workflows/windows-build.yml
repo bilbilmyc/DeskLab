@@ -44,7 +44,13 @@ jobs:
         run: bun test tests
       - name: Validate repository documentation
         run: bun scripts/checks/repository-check.ts
+      - name: Cache pinned QEMU download
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .runtime/downloads/qemu-w64-setup-20260811.exe
+          key: qemu-windows-x64-20260811-5bcf9eed634e8575a37b74f445af41a2f
       - name: Prepare pinned QEMU (local extraction)
+        timeout-minutes: 8
         run: bun run qemu:prepare
       - name: Build Windows executable
         run: bun run package -- --with-qemu

@@ -2,7 +2,7 @@
 
 ## 干净克隆
 
-使用 Windows x64、Bun 1.3.14、Git。准备 QEMU 发行包时还需要 7-Zip；托盘使用 Windows .NET Framework 的 C# 编译器。构建首次访问 npm、QEMU 分发站及 Inno Setup GitHub Release，必须能联网。
+使用 Windows x64、Bun 1.3.14、Git。准备 QEMU 发行包时还需要 Windows 自带的 `curl.exe` 和 7-Zip；托盘使用 Windows .NET Framework 的 C# 编译器。构建首次访问 npm、QEMU 分发站及 Inno Setup GitHub Release，必须能联网。
 
 ```powershell
 git clone git@github.com:bilbilmyc/DeskLab.git
@@ -19,6 +19,8 @@ bun run installer
 `postinstall` 仅创建缺失的生成资源占位模块，解决干净克隆缺少 `server/generated/web.ts` 的问题；不会覆盖现有打包资源。若使用了 `--ignore-scripts`，手动执行 `bun run prepare`。
 
 `qemu:prepare` 下载固定 20260811 Windows QEMU 安装包，校验发布方 SHA512，再用 7-Zip解压到 `.runtime/tools/qemu`，不运行全局安装。也可自行准备完整发行目录，通过 `QEMU_TEST_DIR` 指定后执行 `bun run package -- --with-qemu`。保留 DLL、`share/` 固件和许可证，不能只拷贝一个 QEMU EXE。
+
+QEMU 下载有完整传输时限和最多三次尝试，先写入临时文件，校验成功后才进入缓存。CI 按固定版本与校验值缓存安装包，每次使用缓存仍会重新核对 SHA512，避免重复下载和网络卡住。
 
 网页、图标、托盘、嵌入资源和 EXE 均由构建脚本生成。`bun run installer` 准备固定 Inno Setup 7.1.0 并生成安装器。`dist/installer/DeskLab-Setup.build.json` 记录应用版本、构建时间和两种 EXE 的哈希。
 

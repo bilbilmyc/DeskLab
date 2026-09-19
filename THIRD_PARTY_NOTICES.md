@@ -1,6 +1,6 @@
 # 第三方组件与分发说明
 
-第一方 DeskLab 源码尚未指定开源许可证。本文件说明依赖来源，不为第三方组件改授许可证；发布正式版本前需要明确项目本身的许可和二进制分发资料。
+第一方 DeskLab 源码采用 [MIT 许可证](LICENSE)。本文件说明依赖来源，不为第三方组件改授许可证；随包组件保留各自的许可和源码获取资料。
 
 - **Bun**：成品内嵌 Bun 运行时及其依赖。许可与 notices 见 [oven-sh/bun](https://github.com/oven-sh/bun)。
 - **Next.js、React、Lucide、Zod**：依赖版本由 `bun.lock` 固定，各包许可随 npm 包提供。

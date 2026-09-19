@@ -62,6 +62,8 @@ Name: "{app}\templates"; Flags: uninsneveruninstall
 [Files]
 Source: "{#AppExe}"; DestDir: "{app}"; DestName: "DeskLab.exe"; Flags: ignoreversion
 Source: "DeskLab.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\desklab.install.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\node-forge.LICENSE.txt"; DestDir: "{app}\licenses"; Flags: ignoreversion
 Source: "{#StageDir}\builtin-catalogue.json"; DestDir: "{app}\templates"; Flags: ignoreversion uninsneveruninstall

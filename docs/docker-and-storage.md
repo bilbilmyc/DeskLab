@@ -1,6 +1,6 @@
 # Docker、端口映射与 SQLite
 
-> 当前为预发布功能。GitHub Actions 默认构建基础安装包，不包含独立引擎 Linux 镜像；完整构建方式见 [构建与 CI](build-and-ci.md)。
+> v1.0.0 基础安装包支持连接外部 Docker，不包含独立引擎 Linux 镜像；完整独立引擎构建继续单独验证，方式见 [构建与 CI](build-and-ci.md)。
 
 ## 使用
 

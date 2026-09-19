@@ -1,6 +1,6 @@
 # 发布与镜像加载
 
-> 当前为预发布阶段，`master` 不是稳定版声明。GitHub Actions 默认输出基础安装包；完整包另外包含独立 Docker 的预装 Linux、CLI 和 Compose，见 [构建与 CI](build-and-ci.md)。以下“客体 ISO/模板磁盘”不包括专用 Docker 组件。
+> v1.0.0 正式版为 Windows x64 基础安装包，`master` 为开发集成主线。完整包另外包含独立 Docker 的预装 Linux、CLI 和 Compose，见 [构建与 CI](build-and-ci.md)。以下“客体 ISO/模板磁盘”不包括专用 Docker 组件。
 
 ## Windows 成品
 

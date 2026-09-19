@@ -4,7 +4,7 @@
 
 在 Windows 本机创建独立的 Windows / Linux 测试环境，通过浏览器使用桌面或终端；也可以使用 DeskLab 独立 Docker 引擎管理容器。
 
-**当前处于预发布验证阶段，不是正式生产版本。** 主分支为 `master`，当前候选分支为 [`v1.0.0-rc1`](https://github.com/bilbilmyc/DeskLab/tree/v1.0.0-rc1)。正式版时间尚未确定；候选版本通过验证后再决定是否发布，不会按日期自动转正。
+**当前正式版本为 v1.0.0，面向个人本地测试环境。** 下载 Windows x64 基础版请前往 [Releases](https://github.com/bilbilmyc/DeskLab/releases/latest)。`master` 是开发集成主线，已发布版本以对应标签和 Release 为准。
 
 ## 能做什么
 
@@ -18,7 +18,11 @@
 
 ## 下载与安装
 
-在仓库 [Actions → Windows build](https://github.com/bilbilmyc/DeskLab/actions/workflows/windows-build.yml) 中选择成功的候选分支构建，下载 `DeskLab-<版本>-windows-x64-basic` 产物。解压后运行 `DeskLab-Setup.exe`，安装完成后使用 DeskLab 快捷方式。Actions 产物保留 14 天，不等同于正式 Release；需要登录 GitHub 才能下载。
+从 [v1.0.0 Release](https://github.com/bilbilmyc/DeskLab/releases/tag/v1.0.0) 下载 `DeskLab-Setup-v1.0.0-windows-x64.exe`，安装完成后使用 DeskLab 快捷方式。独立程序为 `DeskLab.exe`；附件同时提供 SHA-256 清单和构建记录。
+
+已有安装可选择原目录覆盖升级，无需先卸载。升级前正常关闭虚拟机、停止容器并完全退出 DeskLab，备份数据目录；安装器保留 `data`、`iso` 和 `templates` 中的用户数据。
+
+开发构建可从 [Actions → Windows build](https://github.com/bilbilmyc/DeskLab/actions/workflows/windows-build.yml) 下载 `DeskLab-<版本>-windows-x64-basic` 产物；其中安装器同样带版本名。Actions 产物保留 14 天，下载需要登录 GitHub。
 
 安装包有两种组成，请先区分：
 
@@ -86,7 +90,7 @@ ssh -i 'D:\apps\DeskLab\data\ssh\id_ed25519' -o IdentitiesOnly=yes -p 2222 root@
 ```powershell
 git clone git@github.com:bilbilmyc/DeskLab.git
 cd DeskLab
-git switch v1.0.0-rc1
+git switch master
 bun install --frozen-lockfile
 bun run dev
 ```
@@ -103,7 +107,7 @@ bun run installer
 
 产物位于 `dist/app/` 和 `dist/installer/`，不会输出到项目根目录。GitHub Actions 执行依赖安装、类型检查、无本机介质的单元测试、Windows EXE/基础安装包构建、隔离启动验证与 SHA256 清单生成。云端成功不代表已通过真实 WHPX、完整 OS 安装和独立 Docker 引擎验收。
 
-[构建与 CI](docs/build-and-ci.md) · [分支与预发布约定](docs/releasing.md) · [项目目录](docs/project-layout.md) · [贡献说明](CONTRIBUTING.md)
+[构建与 CI](docs/build-and-ci.md) · [版本与发布约定](docs/releasing.md) · [项目目录](docs/project-layout.md) · [贡献说明](CONTRIBUTING.md)
 
 ## 当前边界
 
@@ -117,4 +121,4 @@ bun run installer
 
 [文档索引](docs/README.md)集中列出使用说明和开发资料。`docs/plans/`、旧版本验证记录和 UI 变更记录属于历史资料，不代表功能承诺；当前能力以本 README 和使用指南为准。
 
-项目尚未指定第一方源码的开源许可证，不应将仓库公开等同于 MIT/Apache 授权。Bun、QEMU、noVNC、Docker、Linux 发行版和安装器各自保留其许可证，见 [第三方说明](THIRD_PARTY_NOTICES.md)。
+DeskLab 第一方源码采用 [MIT 许可证](LICENSE)，允许商业使用、修改与分发，需保留版权及许可声明。Bun、QEMU、noVNC、Docker、Linux 发行版和安装器各自保留其许可证，见 [第三方说明](THIRD_PARTY_NOTICES.md)。

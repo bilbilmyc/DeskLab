@@ -1,6 +1,6 @@
 # 文档索引
 
-当前产品范围见 [README](../README.md)。本仓库仍处于 RC 验证阶段，正式发布条件见 [分支与预发布约定](releasing.md)。
+当前正式版为 Windows x64 基础版 v1.0.0，产品范围见 [README](../README.md)，发布流程见 [版本与发布约定](releasing.md)。
 
 ## 使用
 
@@ -13,7 +13,7 @@
 ## 开发
 
 - [构建与 CI](build-and-ci.md)：从干净克隆到 Windows 成品。
-- [分支与预发布约定](releasing.md)：`master`、`v1.0.0-rc1` 和正式版准入。
+- [版本与发布约定](releasing.md)：主线、候选版、正式标签和发布准入。
 - [目录约定](project-layout.md)、[贡献说明](../CONTRIBUTING.md)、[变更记录](../CHANGELOG.md)。
 - [第三方组件](../THIRD_PARTY_NOTICES.md)、[ISO 源清单与历史核验](iso-sources.md)。
 

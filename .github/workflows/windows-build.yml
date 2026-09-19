@@ -68,7 +68,7 @@ jobs:
           Copy-Item dist/app/DeskLab.exe dist/release/DeskLab.exe
           Copy-Item dist/installer/DeskLab-Setup.exe "dist/release/DeskLab-Setup-v$version-windows-x64.exe"
           Copy-Item dist/installer/DeskLab-Setup.build.json dist/release/
-          Copy-Item README.md,THIRD_PARTY_NOTICES.md dist/release/
+          Copy-Item README.md,LICENSE,THIRD_PARTY_NOTICES.md dist/release/
           Copy-Item CHANGELOG.md,CONTRIBUTING.md dist/release/
           Copy-Item docs dist/release/docs -Recurse
           'Basic CI build: includes QEMU; no guest ISO or independent Docker Linux image. See README.' | Set-Content dist/release/BUILD-FLAVOR.txt

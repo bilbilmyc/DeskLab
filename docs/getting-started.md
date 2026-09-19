@@ -1,8 +1,8 @@
 # 第一次使用 DeskLab
 
-> 当前为预发布版本。GitHub Actions 默认提供不含独立 Docker Linux 组件的基础安装包；完整构建的区别见 [README](../README.md#下载与安装)。
+> v1.0.0 正式版提供 Windows x64 基础安装包，不含独立 Docker Linux 组件；完整构建的区别见 [README](../README.md#下载与安装)。
 
-DeskLab 让你在浏览器里打开一台独立的 Windows 或 Linux 测试电脑。先双击 `DeskLab-Setup.exe`，选择安装目录并完成安装，再打开 DeskLab 快捷方式或 `DeskLab.exe`。浏览器会自动打开。
+DeskLab 让你在浏览器里打开一台独立的 Windows 或 Linux 测试电脑。先双击 `DeskLab-Setup-v1.0.0-windows-x64.exe`，选择安装目录并完成安装，再打开 DeskLab 快捷方式或 `DeskLab.exe`。浏览器会自动打开。
 
 安装器会自动创建 `data`、`iso` 和 `templates` 目录，不需要复制开发项目的 `.data`。`iso` 起初为空，用来存放之后选择或下载的安装盘；`templates` 放使用说明，真正安装好的系统会保存在 `data` 中。
 

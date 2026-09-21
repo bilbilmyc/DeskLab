@@ -17,9 +17,11 @@ import {networkCapabilities} from './network';
 import {PortMappings} from './ports';
 import {DockerService} from './docker/service';
 import {ComposeProjects} from './docker/compose';
+import {Diagnostics} from './diagnostics';
 
 export async function startDeskLab(bundle:string,root:string) {
 let port = preferredPort();
+const requestedPort = port;
 let origin = `http://127.0.0.1:${port}`;
 const development = process.env.LAB_DEV === '1';
 const shouldOpen = wantsBrowser();
@@ -47,6 +49,7 @@ const bundleIso = join(bundle, 'iso');
 const isoDirectory = await stat(bundleIso).then(s=>s.isDirectory()).catch(()=>false) ? bundleIso : join(root, 'iso');
 await mkdir(isoDirectory, {recursive:true});
 const lab = new Lab(store, isoDirectory), token = crypto.randomUUID();
+const diagnostics = new Diagnostics(() => ({root: store.root, isoDirectory: lab.isoDirectory(), settings: {...store.data.settings}, requestedPort, actualPort: port}));
 const mappings=new PortMappings(store,lab),docker=new DockerService(store),compose=new ComposeProjects(docker);
 await docker.backups.recover();await docker.managed.recover();
 await lab.recover();
@@ -54,11 +57,15 @@ recoveryTimer=setInterval(()=>void lab.exclusive(()=>lab.refreshRecovered()).cat
 let exitRequested=false;
 const tickets = new Map<string, {id: string; expires: number}>();
 type WSData = {id: string; socket?: Socket; devUrl?: string; upstream?: WebSocket; pending?: (string|Buffer)[]};
-const json = (value: unknown, status = 200) => Response.json(value, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
+const responseJson = (value: unknown, status = 200) => Response.json(value, {status, headers: {'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'}});
 const server = bindAvailable(port,listenPort=>Bun.serve<WSData>({
   hostname: '127.0.0.1', port:listenPort, idleTimeout: 255, maxRequestBodySize: 64 * 1024,
   async fetch(request, server) {
     const url = new URL(request.url);
+    const json = (value: unknown, status = 200, error?: unknown) => {
+      if (request.method === 'POST' && request.headers.get('x-lab-token') === token) diagnostics.events.record(url.pathname, status, error);
+      return responseJson(value, status);
+    };
     if (request.headers.get('host') !== `127.0.0.1:${port}`) return json({error: '无效的主机地址'}, 403);
     const requestOrigin = request.headers.get('origin');
     if (requestOrigin && requestOrigin !== origin) return json({error: '拒绝跨站请求'}, 403);
@@ -87,6 +94,8 @@ const server = bindAvailable(port,listenPort=>Bun.serve<WSData>({
         if (!request.headers.get('content-type')?.startsWith('application/json')) return json({error: '需要 JSON 请求'}, 415);
         const body = await request.json();
         if(exitRequested)return json({error:'DeskLab 正在退出'},409);
+        if(url.pathname==='/api/diagnostics/check')return json(await diagnostics.check(body?.refresh === true));
+        if(url.pathname==='/api/diagnostics/export')return json(await diagnostics.export());
         const managedAction=url.pathname.match(/^\/api\/docker\/managed\/(enable|start|stop|force-stop|select|backup|restore|rebuild|configure)$/);
         if(managedAction)return json(docker.managedAction(managedAction[1],body),202);
         if(url.pathname==='/api/docker/managed/logs')return json({text:await docker.managed.logs()});
@@ -151,7 +160,7 @@ const server = bindAvailable(port,listenPort=>Bun.serve<WSData>({
         return json(value);
       } catch (error) {
         const message = error instanceof ZodError ? error.issues.map(x => x.message).join('；') : error instanceof Error ? error.message : '操作失败';
-        return json({error: message}, 400);
+        return json({error: message}, 400, error);
       }
     }
     if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', {status: 405});

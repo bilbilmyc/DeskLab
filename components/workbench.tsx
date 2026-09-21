@@ -5,6 +5,7 @@ import {version} from '../package.json';
 import type { Family, Machine, Template } from '@/shared/types';
 import { families } from '@/shared/types';
 import { useLab } from './use-lab';
+import {useDiagnostics, DiagnosticsSummary} from './diagnostics';
 import { Bytes, Empty, Modal } from './primitives';
 import { CreateMachine } from './create-machine';
 import { MachineList } from './machine-list';
@@ -24,6 +25,7 @@ type Page = 'machines' | 'templates' | 'settings' | 'docker' | 'ports';
 type Confirmation = {id: string; name: string; operation: string; kind: 'machines'|'templates'};
 export function Workbench() {
   const {data, error, busy, action, clearError, exited, inspectIso} = useLab();
+  const diagnostics = useDiagnostics(!!data && !exited, action, JSON.stringify(data?.settings));
   const [confirmExit,setConfirmExit]=useState(false);
   const [connectionId,setConnectionId]=useState('');
   const [page, setPage] = useState<Page>('machines'), [creating, setCreating] = useState(false), [family, setFamily] = useState<Family>();
@@ -72,6 +74,7 @@ export function Workbench() {
     <div className="main-column"><header className="topbar"><div className="breadcrumb">本地实验室 <ChevronRight size={14}/><span>{titles[page]}</span></div><div className="inline">{transfers.length>0&&<button className="download-indicator" onClick={()=>openSettings()}><Download size={14}/>下载中 {transfers.length}</button>}<span className="host-chip"><Monitor size={14}/>Windows 本机</span><button className="icon-button" title="打开本机设置" aria-label="打开本机设置" onClick={() => openSettings('computer')}><SlidersHorizontal size={17}/></button></div></header>
       {tabs.length > 0 && <div className="desktop-tabs"><button className={!active ? 'selected' : ''} onClick={() => setActive('')}><Box size={14}/>工作空间</button>{tabs.map(id => {const vm = data?.machines.find(x => x.id === id); return vm && <div key={id} className={active === id ? 'selected' : ''}><button onClick={() => {setActive(id); setPage('machines');}}><Monitor size={14}/>{vm.name}</button><button aria-label={`关闭 ${vm.name} 桌面标签`} onClick={() => {setTabs(old => old.filter(x => x !== id)); if (active === id) setActive('');}}><X size={13}/></button></div>;})}</div>}
       <main id="main-content" className={browsingMachines?'machine-workspace-main':current?'desktop-workspace-main':page==='docker'?'docker-workspace-main':'standard-workspace-main'}>
+        {data && !current && page !== 'settings' && <DiagnosticsSummary state={diagnostics} open={() => openSettings('computer')}/>}
         {error && <div className="alert error" role="alert"><AlertCircle size={18}/><span>{error}</span><button className="icon-button" onClick={clearError} aria-label="关闭错误提示"><X size={16}/></button></div>}
         {notice && <div className="alert success" role="status"><Check size={18}/><span>{notice}</span><button className="icon-button" onClick={() => setNotice('')} aria-label="关闭通知"><X size={16}/></button></div>}
         {!data ? <div className="loading"><LoaderCircle className="spin" size={26}/><p>正在读取本地环境…</p></div> : current ? <Desktop machine={current} ticket={ticket} connect={()=>setConnectionId(current.id)}/> : <>
@@ -86,7 +89,7 @@ export function Workbench() {
             </section></div>
           </>}
           {page === 'templates' && <TemplateLibrary key={templateGroup} initialGroup={templateGroup} data={data} create={(id,customize)=>create(undefined,id,customize)} createISO={installIso} manageImages={()=>openSettings()} showMachines={()=>selectPage('machines')} remove={(t: Template) => setConfirmation({id:t.id,name:t.name,kind:'templates',operation:'delete'})} update={(id,body)=>action(`templates/${id}/update`,body)} importing={!!busy} importImage={async body => {const result=await action('templates/import',body);setNotice('模板已导入。点击“创建环境”即可使用。');return result;}} pickImage={pickImage}/>}
-          {page === 'settings' && <SettingsPanel section={settingsSection} setSection={setSettingsSection} data={data} busy={!!busy} save={body => action('settings',body)} scan={()=>action('isos/scan')} pickDirectory={()=>pickImage('directory')} download={id=>action(`isos/${id}/download`)} pause={id=>action(`isos/${id}/pause`)} install={installIso}/>}
+          {page === 'settings' && <SettingsPanel diagnostics={diagnostics} action={action} section={settingsSection} setSection={setSettingsSection} data={data} busy={!!busy} save={body => action('settings',body)} scan={()=>action('isos/scan')} pickDirectory={()=>pickImage('directory')} download={id=>action(`isos/${id}/download`)} pause={id=>action(`isos/${id}/pause`)} install={installIso}/>}
           {page === 'docker' && <DockerPanel action={action}/>}
           {page === 'ports' && <PortsPanel machines={data.machines} action={action}/>}
         </>}

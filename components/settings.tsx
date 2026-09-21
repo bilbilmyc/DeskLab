@@ -3,9 +3,10 @@ import { useRef, useState } from 'react';
 import { Check, CircleHelp, ExternalLink, Cpu, FolderOpen, LoaderCircle, MemoryStick, SlidersHorizontal, ArrowRight, Disc3 } from 'lucide-react';
 import type { Family, LabSnapshot } from '@/shared/types';
 import { Bytes } from './primitives';
+import {DiagnosticsPanel, type DiagnosticState} from './diagnostics';
 import { downloading, IsoLibraryPanel } from './iso-library';
 
-export function SettingsPanel({data, save, busy, scan, pickDirectory, download, pause, install, section, setSection}: {data: LabSnapshot; save: (value: unknown) => Promise<unknown>; busy: boolean; scan:()=>Promise<unknown>;pickDirectory:()=>Promise<{path:string|null}>;download:(id:string)=>Promise<unknown>;pause:(id:string)=>Promise<unknown>;install:(path:string,family:Family)=>void;section:'images'|'computer';setSection:(section:'images'|'computer')=>void}) {
+export function SettingsPanel({data, save, busy, scan, pickDirectory, download, pause, install, section, setSection, diagnostics, action}: {diagnostics: DiagnosticState; action: <T = unknown>(path: string, body?: unknown) => Promise<T>; data: LabSnapshot; save: (value: unknown) => Promise<unknown>; busy: boolean; scan:()=>Promise<unknown>;pickDirectory:()=>Promise<{path:string|null}>;download:(id:string)=>Promise<unknown>;pause:(id:string)=>Promise<unknown>;install:(path:string,family:Family)=>void;section:'images'|'computer';setSection:(section:'images'|'computer')=>void}) {
   const [saved, setSaved] = useState(false);
   const imagesButton = useRef<HTMLButtonElement>(null);
   const transfers = data.isoLibrary?.resources.filter(item=>downloading(item.download)).length ?? 0;
@@ -15,7 +16,7 @@ export function SettingsPanel({data, save, busy, scan, pickDirectory, download, 
       <button className={section==='computer'?'selected':''} aria-pressed={section==='computer'} aria-controls="settings-computer" onClick={()=>setSection('computer')}><SlidersHorizontal size={16}/>运行与存储</button>
     </div><p>{section==='images'?'找到安装盘，或下载一个新系统。':'查看电脑资源、运行引擎和文件位置。'}</p></div>
     <div id="settings-images" className="workspace-scroll settings-results" role="region" aria-label="系统镜像设置" tabIndex={0} hidden={section!=='images'}><IsoLibraryPanel data={data} save={save} busy={busy} scan={scan} pickDirectory={pickDirectory} download={download} pause={pause} install={install}/></div>
-    <div id="settings-computer" className="workspace-scroll settings-results" role="region" aria-label="运行与存储设置" tabIndex={0} hidden={section!=='computer'}><div className="settings-card-grid">
+    <div id="settings-computer" className="workspace-scroll settings-results" role="region" aria-label="运行与存储设置" tabIndex={0} hidden={section!=='computer'}><DiagnosticsPanel state={diagnostics} action={action}/><div className="settings-card-grid">
       <section className="panel engine-card"><div className="settings-card-heading"><span className="settings-symbol"><Cpu size={20}/></span><div><h2>运行环境</h2><p>使用本机资源运行测试系统。</p></div></div>
         <div className="computer-facts"><div><Cpu size={16}/><span>处理器<strong>{data.host.threads} 核</strong></span></div><div><MemoryStick size={16}/><span>内存<strong><Bytes value={data.host.totalMemory}/></strong></span></div></div>
         <p className="computer-description">{data.host.cpu}<br/>{data.host.platform} / {data.host.arch} · 当前可用内存 <Bytes value={data.host.freeMemory}/></p>

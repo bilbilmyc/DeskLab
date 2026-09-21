@@ -1,9 +1,10 @@
 # 文档索引
 
-当前正式版为 Windows x64 基础版 v1.0.0，产品范围见 [README](../README.md)，发布流程见 [版本与发布约定](releasing.md)。
+当前正式版为 Windows x64 基础版 v1.1.0，产品范围见 [README](../README.md)，发布流程见 [版本与发布约定](releasing.md)。
 
 ## 使用
 
+- [本机体检与诊断导出](diagnostics.md)：运行条件检查、处理建议和不含原始敏感日志的本地诊断文件。
 - [第一次使用](getting-started.md)：安装、创建、关机和自己的模板。
 - [ISO 与系统支持](iso-guide.md)：必需文件、固定版本、目录外 ISO、错配处理与校验。
 - [网络与 SSH](network-and-ssh.md)：仅 NAT、本机连接和密钥授权。

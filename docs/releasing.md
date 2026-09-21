@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-当前正式版为 `v1.0.0`，发布 Windows x64 基础包。`master` 是默认集成主线；稳定下载以 [Release](https://github.com/bilbilmyc/DeskLab/releases/latest) 的标签、源码提交和构建记录为准。
+当前正式版为 `v1.1.0`，发布 Windows x64 基础包。`master` 是默认集成主线；稳定下载以 [Release](https://github.com/bilbilmyc/DeskLab/releases/latest) 的标签、源码提交和构建记录为准。
 
 `v1.0.0-rc1` 候选分支与同名预发布标签保留，二者是独立的 Git 引用。后续候选版使用新的版本号和标签，同一分支上的修订用 commit SHA 和 Actions run 区分；不要移动已公开的标签。
 

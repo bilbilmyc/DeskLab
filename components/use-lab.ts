@@ -26,8 +26,9 @@ export function useLab() {
   }, [refresh]);
   const action = useCallback(async <T = unknown>(path: string, body: unknown = {}): Promise<T> => {
     // Browsing files and getting console tickets do not mutate the lab or lock its forms.
-    if (path.endsWith('/console') || path==='files/list') {
-      const response = await fetch(`/api/${path}`,{method:'POST',headers:{'Content-Type':'application/json','x-lab-token':token.current},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)}).catch(error=>{if(error.name==='TimeoutError')throw new Error('读取超时，请重试或选择其他文件夹');throw error;});
+    if (path.endsWith('/console') || path==='files/list' || path.startsWith('diagnostics/')) {
+      const diagnostic = path.startsWith('diagnostics/');
+      const response = await fetch(`/api/${path}`,{method:'POST',headers:{'Content-Type':'application/json','x-lab-token':token.current},body:JSON.stringify(body),signal:AbortSignal.timeout(diagnostic ? 45000 : 15000)}).catch(error=>{if(error.name==='TimeoutError')throw new Error(diagnostic ? '体检超时，请稍后重新检测。' : '读取超时，请重试或选择其他文件夹');throw error;});
       const result=await response.json();if(!response.ok)throw new Error(result.error||'读取失败');return result;
     }
     if (mutating.current) throw new Error('请等待当前操作完成');

@@ -4,9 +4,11 @@
 
 在 Windows 本机创建独立的 Windows / Linux 测试环境，通过浏览器使用桌面或终端；也可以使用 DeskLab 独立 Docker 引擎管理容器。
 
-**当前正式版本为 v1.0.0，面向个人本地测试环境。** 下载 Windows x64 基础版请前往 [Releases](https://github.com/bilbilmyc/DeskLab/releases/latest)。`master` 是开发集成主线，已发布版本以对应标签和 Release 为准。
+**当前正式版本为 v1.1.0，面向个人本地测试环境。** 下载 Windows x64 基础版请前往 [Releases](https://github.com/bilbilmyc/DeskLab/releases/latest)。`master` 是开发集成主线，已发布版本以对应标签和 Release 为准。
 
 ## 能做什么
+
+- 自动检查虚拟化、WHPX、QEMU、存储和端口；提供处理建议与本地脱敏诊断导出。[体检说明](docs/diagnostics.md)
 
 - 创建、启动和正常关闭虚拟机；在浏览器中使用 noVNC 控制台。关机、强制关闭、恢复与删除均有确认。
 - 从模板创建独立副本，自定义 CPU、内存、磁盘；保存自己的系统模板。已有模板的磁盘可扩大，不能缩小。
@@ -18,7 +20,7 @@
 
 ## 下载与安装
 
-从 [v1.0.0 Release](https://github.com/bilbilmyc/DeskLab/releases/tag/v1.0.0) 下载 `DeskLab-Setup-v1.0.0-windows-x64.exe`，安装完成后使用 DeskLab 快捷方式。独立程序为 `DeskLab.exe`；附件同时提供 SHA-256 清单和构建记录。
+从 [v1.1.0 Release](https://github.com/bilbilmyc/DeskLab/releases/tag/v1.1.0) 下载 `DeskLab-Setup-v1.1.0-windows-x64.exe`，安装完成后使用 DeskLab 快捷方式。独立程序为 `DeskLab.exe`；附件同时提供 SHA-256 清单和构建记录。
 
 已有安装可选择原目录覆盖升级，无需先卸载。升级前正常关闭虚拟机、停止容器并完全退出 DeskLab，备份数据目录；安装器保留 `data`、`iso` 和 `templates` 中的用户数据。
 

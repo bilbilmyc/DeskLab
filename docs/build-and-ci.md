@@ -102,4 +102,4 @@ bun scripts/checks/installer-smoke.ts
 
 `scripts/checks/check-evidence.ts` 在验收开始时读取真实文件，记录程序/安装器/构建清单 SHA-256、版本、basic/full flavor、构建清单时间、验收时间、当前 Git commit 与 dirty 状态。程序和安装器必须与构建清单一致；结束时重新核对哈希，产物变化则验收失败。`sourceAtCheck` 表示验收时的工作区，不把未记录的构建来源推断为该提交，也不向历史结果补填新产物哈希。
 
-浏览器结果位于 `.runtime/checks/restore-points-ui-*/result.json`，连接恢复结果位于 `connection-ui-*/report.json`，安装器结果位于 `.runtime/checks/installer-check-*/result.json`。安装器使用唯一的 `.runtime/checks` 子目录和 `/DESKLABTEST=1`：不创建卸载注册项、不复用真实安装目录、不生成系统快捷方式、不启动用户程序。该测试证明同一最终安装包覆盖安装及卸载的数据保留；跨版本 schema 迁移由 `schema-upgrade.ts` 验证（进程中断证据在 `restore-process-*/result.json`），完整客体启动需要另行实机验收。
+浏览器结果位于 `.runtime/checks/restore-points-ui-*/result.json`，连接恢复结果位于 `connection-ui-*/report.json`，安装器结果位于 `.runtime/checks/installer-check-*/result.json`。安装器使用唯一的 `.runtime/checks` 子目录和 `/DESKLABTEST=1`：不创建卸载注册项、不复用真实安装目录、不生成系统快捷方式、不启动用户程序。该测试证明同一最终安装包覆盖安装及卸载的数据保留；跨版本 schema 迁移由 `schema-upgrade.ts` 验证（进程中断证据在 `restore-process-*/result.json`）。完整客体实机验收使用 [还原点文档](restore-points.md) 中的 `restore-points-guest.ts`：2026-10-06 已对 Linux（BIOS）与 Windows（UEFI）客体在 1.2.0-rc1 最终打包 EXE 上通过。

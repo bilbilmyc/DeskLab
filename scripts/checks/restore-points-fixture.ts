@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {join, relative, resolve, isAbsolute} from 'node:path';
+import {Store} from '../../server/store';
+import {Lab} from '../../server/lab';
+import {executable, run} from '../../server/qemu';
+import {uefiDrives} from '../../server/firmware';
+
+const root = resolve(process.argv[2] ?? '');
+const inside = relative(resolve('.runtime/checks'), root);
+assert.ok(inside && !inside.startsWith('..') && !isAbsolute(inside), 'fixture must be in .runtime/checks');
+const store = new Store(join(root, 'data')); await store.init();
+assert.equal(store.data.machines.length, 0, 'fixture must be empty');
+store.data.settings.accelerator = 'tcg'; await store.save();
+const lab = new Lab(store), img = await executable('', true), qemu = await executable('');
+assert.ok(img && qemu);
+await Bun.write(join(root, 'seed.raw'), Buffer.alloc(65536, 65));
+await run(img, ['convert', '-f', 'raw', '-O', 'qcow2', join(root, 'seed.raw'), join(root, 'seed.qcow2')]);
+await run(img, ['resize', join(root, 'seed.qcow2'), '8G']);
+const template = await lab.importTemplate({name: '隔离测试模板', family: 'linux', firmware: 'uefi', path: join(root, 'seed.qcow2')});
+const vm = await lab.create({name: '还原点验收环境', family: 'linux', firmware: 'uefi', templateId: template.id, memory: 512, cpus: 1, diskGB: 8});
+await uefiDrives(qemu, store.managed('machines', vm.id, 'uefi-initial.fd'));
+await Bun.write(join(root, 'fixture.json'), JSON.stringify({machineId: vm.id, disk: lab.disk(vm.id), base: lab.base(template.id)}, null, 2));
+console.log('Created isolated restore point UI fixture.');

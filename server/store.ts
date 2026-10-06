@@ -1,15 +1,17 @@
-import { mkdir, readFile, rename, writeFile, readdir, rm, access } from 'node:fs/promises';
+import { mkdir, readFile, rename, readdir, rm, access, open } from 'node:fs/promises';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import type { Machine, Settings, Template } from '../shared/types';
 import {MetadataDatabase} from './database';
+import {recoverRestorePoint, type RestorePointJournal} from './restore-point-storage';
 
 interface Database {version: 1; settings: Settings; machines: Machine[]; templates: Template[];}
-export interface Journal {type: 'reset'|'delete'; kind: 'machines'|'templates'; id: string; transaction: string;}
+export type Journal = {type: 'reset'|'delete'; kind: 'machines'|'templates'; id: string; transaction: string;} | RestorePointJournal;
 async function exists(path: string) { try {await access(path); return true;} catch{return false;} }
 export class Store {
   data: Database = {version: 1, settings: {qemuPath: '', accelerator: process.platform === 'win32' ? 'whpx' : 'tcg'}, machines: [], templates: []};
   private committed?: Database;
   readonly db:MetadataDatabase;
+  needsRecovery = false;
   constructor(public root: string) { this.root = resolve(root);this.db=new MetadataDatabase(this.root); }
   async init() {
     await mkdir(this.root, {recursive: true});
@@ -31,9 +33,12 @@ export class Store {
     } catch (error) { if (this.committed) this.data = structuredClone(this.committed); throw error; }
   }
   async journal(record: Journal) {
+    this.needsRecovery = true;
     await mkdir(this.managed('transactions'), {recursive:true});
     const file = this.managed('transactions',record.transaction+'.json');
-    await writeFile(file+'.tmp',JSON.stringify(record)); await rename(file+'.tmp',file);
+    const handle = await open(file+'.tmp', 'w');
+    try {await handle.writeFile(JSON.stringify(record)); await handle.sync();} finally {await handle.close();}
+    await rename(file+'.tmp',file);
   }
   async finishJournal(record: Journal) { await rm(this.managed('transactions',record.transaction+'.json'),{force:true}); }
   async recoverFiles() {
@@ -42,7 +47,10 @@ export class Store {
       if (!file.endsWith('.json')) continue;
       const record = JSON.parse(await readFile(this.managed('transactions',file),'utf8')) as Journal;
       if (!/^[a-f0-9-]{36}$/.test(record.id) || !/^[a-f0-9-]{36}$/.test(record.transaction) || !['machines','templates'].includes(record.kind)) throw new Error('无效的磁盘恢复记录');
-      if (record.type === 'delete') {
+      if (record.type === 'restore-point-create' || record.type === 'restore-point-delete' || record.type === 'restore-point-restore') {
+        if (record.kind !== 'machines') throw new Error('无效的还原点恢复记录');
+        await recoverRestorePoint(this, record);
+      } else if (record.type === 'delete') {
         const original = this.managed(record.kind,record.id), trash = this.managed('trash',record.transaction);
         const retained = this.data[record.kind].some(x=>x.id===record.id);
         if (await exists(trash)) { if (retained) await rename(trash,original); else await rm(trash,{recursive:true,force:true}); }
@@ -54,5 +62,6 @@ export class Store {
       } else throw new Error('未知的磁盘恢复操作');
       await this.finishJournal(record);
     }
+    this.needsRecovery = false;
   }
 }

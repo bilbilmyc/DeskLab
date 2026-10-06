@@ -123,3 +123,17 @@ textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:5px;
 .diagnostic-status{font-size:.72rem;flex-shrink:0;font-weight:600}
 .diagnostic-pass{color:var(--green)}.diagnostic-warning{color:var(--amber)}.diagnostic-fail{color:var(--red)}.diagnostic-unknown{color:var(--muted)}
 @media(max-width:767px){.diagnostics-checks{grid-template-columns:1fr}.diagnostics-summary{align-items:flex-start;flex-wrap:wrap}.diagnostics-heading{gap:.5rem}.diagnostics-panel{padding:.75rem}}
+
+.restore-points-modal{width:min(680px,calc(100vw - 24px))}
+.restore-point-create{display:flex;align-items:flex-end;gap:.75rem;margin:1rem 0}
+.restore-point-create label{flex:1;min-width:0;margin:0}.restore-point-create input{margin-bottom:0}
+.restore-point-create .button{flex-shrink:0}
+.restore-point-list{max-height:40vh;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:6px}
+.restore-point-list ul{list-style:none;margin:0;padding:0}
+.restore-point-list li{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-bottom:1px solid var(--line)}
+.restore-point-list li:last-child{border-bottom:0}
+.restore-point-identity{flex:1;min-width:0}.restore-point-identity strong{display:block;font-size:.85rem;overflow-wrap:anywhere}.restore-point-identity small{display:block;color:var(--muted);font-size:.73rem;margin-top:.3rem}
+.restore-point-actions{display:flex;align-items:center;gap:.4rem;flex-shrink:0}
+.restore-point-empty{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:1.5rem .75rem;font-size:.8rem;color:var(--muted)}
+.restore-point-confirmation h3{font-size:1rem;margin:1rem 0 .5rem}.restore-point-confirmation p{font-size:.85rem;overflow-wrap:anywhere}
+@media(max-width:540px){.restore-point-create{align-items:stretch;flex-direction:column}.restore-point-list li{align-items:flex-start;flex-wrap:wrap}.restore-point-actions{margin-left:auto}.restore-point-identity{flex-basis:100%}.restore-point-empty{align-items:flex-start}}

@@ -19,6 +19,7 @@ import {storedPorts,portAvailable,managementPorts} from './ports';
 import type {MachineNetwork} from '../shared/network';
 import {SshKeys} from './ssh-keys';
 import {validateSelectedIso} from './iso-inspection';
+import {RestorePoints} from './restore-points';
 
 interface Runtime {child?: ChildProcess; pid?: number; verified: boolean; vncPort: number; qmpPort: number; eventPort?: number; closeEvents?: () => void; handlingShutdown?: boolean; watchingBoot?:boolean; log: string; exited: boolean;}
 export class Lab {
@@ -28,8 +29,10 @@ export class Lab {
   private shuttingDown = false;
   private installations: Installations;
   readonly sshKeys:SshKeys;
+  readonly restorePoints: RestorePoints;
   private downloads = new IsoDownloads(isoSources.flatMap(source=>source.url ? [{id:source.id,file:source.file,url:source.url,bytes:source.bytes,sha256:source.sha256}] : []));
   constructor(public store: Store, private defaultIsoDirectory?: string) {
+    this.restorePoints = new RestorePoints(this);
     this.sshKeys=new SshKeys(store.root);
     this.installations=new Installations(store,(id,event,body)=>this.exclusive(async()=>{
       const vm=this.get(id), install=vm.installation;
@@ -136,7 +139,7 @@ export class Lab {
     runtime.verified=true;return runtime;
   }
   exclusive<T>(action: () => Promise<T>): Promise<T> {
-    const next = this.queue.then(action); this.queue = next.catch(() => {}); return next;
+    const next = this.queue.then(async () => {if (this.store.needsRecovery) await this.store.recoverFiles(); return action();}); this.queue = next.catch(() => {}); return next;
   }
   get(id: string) { const vm = this.store.data.machines.find(x => x.id === id); if (!vm) throw new Error('环境不存在'); return vm; }
   disk(id: string) { return this.store.managed('machines', id, 'disk.qcow2'); }
@@ -180,7 +183,7 @@ export class Lab {
     return this.downloads.start(id,this.isoDirectory());
   }
   async pauseIso(id:string) { return this.downloads.pause(id,this.isoDirectory()); }
-  async snapshot(): Promise<LabSnapshot> { return {...this.store.data, host: {...await this.host(), isoDirectory: this.isoDirectory()}, images: await this.images().catch(()=>[]), catalogue: await this.catalogue(), isoLibrary:await this.isoLibrary(),sshKey:await this.sshKeys.info()}; }
+  async snapshot(): Promise<LabSnapshot> { return {...this.store.data, restorePointOperation: this.restorePoints.operation, host: {...await this.host(), isoDirectory: this.isoDirectory()}, images: await this.images().catch(()=>[]), catalogue: await this.catalogue(), isoLibrary:await this.isoLibrary(),sshKey:await this.sshKeys.info()}; }
   async settings(input: unknown) {
     const update=settingsInput.parse(input);
     if(update.isoDirectory!==undefined) {
@@ -253,6 +256,7 @@ export class Lab {
     await this.checkedNetwork(network,id);vm.network=network;await this.store.save();return vm;
   }
   async start(id: string) {
+    if (this.store.needsRecovery) throw new Error('磁盘事务尚未恢复，已阻止启动；请重试或重新打开 DeskLab');
     if(this.shuttingDown)throw new Error('DeskLab 正在退出，不能启动环境');
     const vm = this.get(id);
     if (this.runtime.has(id)) throw new Error('环境已启动或正在启动');
@@ -389,7 +393,7 @@ export class Lab {
       return vm;
     } catch(error) {install.message='保存基础系统失败，系统磁盘已保留。点击启动环境重试。';vm.error=String(error);await this.store.save();throw error;}
   }
-  requireStopped(id: string) { const vm = this.get(id); if (this.runtime.has(id)) throw new Error('请先关闭环境，再执行此操作'); return vm; }
+  requireStopped(id: string) { if (this.store.needsRecovery) throw new Error('磁盘事务尚未恢复，请重试或重新打开 DeskLab'); const vm = this.get(id); if (this.runtime.has(id)) throw new Error('请先关闭环境，再执行此操作'); return vm; }
   async eject(id: string) { const vm = this.requireStopped(id); if(vm.installation && vm.installation.phase!=='ready')throw new Error('自动安装仍需要此 ISO，请等待安装完成');vm.isoPath = undefined; await this.store.save(); return vm; }
   async reset(id: string) {
     const vm = this.requireStopped(id), {img} = await this.tools();

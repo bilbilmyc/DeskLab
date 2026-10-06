@@ -28,9 +28,11 @@ export function run(file: string, args: string[], timeout = 30000): Promise<stri
     let output = '';
     child.stdout.on('data', d => { output = (output + d).slice(-64000); });
     child.stderr.on('data', d => { output = (output + d).slice(-64000); });
-    const timer = setTimeout(() => { child.kill(); reject(new Error('操作超时，请检查镜像文件和虚拟化组件')); }, timeout);
+    // Wait for the process to close before callers roll back files it may still own.
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; child.kill(); }, timeout);
     child.on('error', e => { clearTimeout(timer); reject(e); });
-    child.on('close', code => { clearTimeout(timer); code === 0 ? resolve(output.trim()) : reject(new Error(output.trim() || `进程退出，代码 ${code}`)); });
+    child.on('close', code => { clearTimeout(timer); timedOut ? reject(new Error('操作超时，请检查镜像文件和虚拟化组件')) : code === 0 ? resolve(output.trim()) : reject(new Error(output.trim() || `进程退出，代码 ${code}`)); });
   });
 }
 export async function freePort(): Promise<number> {

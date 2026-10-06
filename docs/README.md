@@ -13,6 +13,7 @@
 
 ## 开发
 
+- [多还原点（1.2.0-rc1 开发版）](restore-points.md)：使用方法、数据范围、升级边界与验证。
 - [构建与 CI](build-and-ci.md)：从干净克隆到 Windows 成品。
 - [版本与发布约定](releasing.md)：主线、候选版、正式标签和发布准入。
 - [目录约定](project-layout.md)、[贡献说明](../CONTRIBUTING.md)、[变更记录](../CHANGELOG.md)。

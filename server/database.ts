@@ -20,7 +20,7 @@ export class MetadataDatabase {
     await mkdir(join(this.root,'backups'),{recursive:true});
     this.with(db=>{
       const version=(db.query('PRAGMA user_version').get() as {user_version:number}).user_version;
-      if(version>2)throw new Error('数据库版本高于当前程序，请使用更新版本的 DeskLab');
+      if(version>3)throw new Error('数据库版本高于当前程序，请使用更新版本的 DeskLab');
       db.query('PRAGMA journal_mode=WAL').get();
       const schema=`
         CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
@@ -49,6 +49,12 @@ export class MetadataDatabase {
           db.query('CREATE TABLE engine_backups(id TEXT PRIMARY KEY,engine_id TEXT NOT NULL,document TEXT NOT NULL)').run();
           db.query('PRAGMA user_version=2').run();
         })();
+      }
+      // Restore points add fields to machine documents and new disk journals.
+      // Older programs must not operate on these transactions during recovery.
+      if(version<3) {
+        if(version>0)db.query('VACUUM INTO ?').run(join(this.root,'backups','before-restore-points-v3-'+Date.now()+'.sqlite'));
+        db.query('PRAGMA user_version=3').run();
       }
     });
     if(!this.get('initialized')) {

@@ -23,6 +23,8 @@ export class DiagnosticEvents {
     if (path === '/api/app/quit') operation = 'app.quit';
     const vm = path.match(/^\/api\/machines\/[^/]+\/(start|stop|force-stop|reset|delete|eject|template|network)$/);
     if (vm) operation = `machine.${vm[1]}`;
+    const point = path.match(/^\/api\/machines\/[^/]+\/restore-points(?:\/[^/]+\/(restore|delete))?$/);
+    if (point) operation = `restore-point.${point[1] ?? 'create'}`;
     const engine = path.match(/^\/api\/docker\/managed\/(enable|start|stop|force-stop|select|backup|restore|rebuild|configure)$/);
     if (engine) operation = `docker.${engine[1]}`;
     if (!operation) return;

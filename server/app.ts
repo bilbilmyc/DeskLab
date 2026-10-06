@@ -94,6 +94,16 @@ const server = bindAvailable(port,listenPort=>Bun.serve<WSData>({
         if (!request.headers.get('content-type')?.startsWith('application/json')) return json({error: '需要 JSON 请求'}, 415);
         const body = await request.json();
         if(exitRequested)return json({error:'DeskLab 正在退出'},409);
+        const pointAction = url.pathname.match(/^\/api\/machines\/([^/]+)\/restore-points(?:\/([^/]+)\/(restore|delete))?$/);
+        if (pointAction) {
+          const machineId = idInput.parse(pointAction[1]), pointId = pointAction[2] ? idInput.parse(pointAction[2]) : undefined;
+          server.timeout(request, 0);
+          return json(await lab.exclusive(async () => {
+            if (exitRequested) throw new Error('DeskLab 正在退出');
+            if (!pointId) return lab.restorePoints.create(machineId, body);
+            return pointAction[3] === 'restore' ? lab.restorePoints.restore(machineId, pointId, body) : lab.restorePoints.remove(machineId, pointId, body);
+          }));
+        }
         if(url.pathname==='/api/diagnostics/check')return json(await diagnostics.check(body?.refresh === true));
         if(url.pathname==='/api/diagnostics/export')return json(await diagnostics.export());
         const managedAction=url.pathname.match(/^\/api\/docker\/managed\/(enable|start|stop|force-stop|select|backup|restore|rebuild|configure)$/);

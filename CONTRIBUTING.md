@@ -1,6 +1,6 @@
 # 参与开发
 
-当前维护主线为 `master`，候选验证分支为 `v1.0.0-rc1`。提交小范围修改，说明具体问题、行为变化和验证结果；不要将预发布构建描述为稳定版。
+当前维护主线为 `master`，候选验证分支为 `v*-rc*`；当前候选版本以 `package.json` 和 `CHANGELOG.md` 为准。提交小范围修改，说明具体问题、行为变化和验证结果；不要将预发布构建描述为稳定版。
 
 先阅读 [构建与 CI](docs/build-and-ci.md) 和 [目录约定](docs/project-layout.md)。安装依赖使用 `bun install --frozen-lockfile`，提交前执行 `bun run typecheck`、`bun test tests` 和 `bun scripts/checks/repository-check.ts`。更改依赖时同步提交 `package.json` 与 `bun.lock`。
 

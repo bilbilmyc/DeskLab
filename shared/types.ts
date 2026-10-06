@@ -1,5 +1,6 @@
 import type {MachineNetwork} from './network';
 import type {SshKeyInfo} from './ssh';
+import type {RestorePoint, RestorePointOperation} from './restore-points';
 export type Family = 'windows' | 'ubuntu' | 'debian' | 'rocky' | 'linux';
 export type Firmware = 'bios' | 'uefi';
 export type VmState = 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
@@ -16,6 +17,7 @@ export interface Machine {
   diskGeneration?: string; session?: {pid?: number; qmpPort: number; vncPort: number; eventPort?: number; sshPort?: number};
   backingResolved?: boolean; firmware?: Firmware;
   installation?: Installation;
+  restorePoints?: RestorePoint[];
 }
 export interface Template {
   id: string; name: string; family: Family; diskGB: number; createdAt: string; firmware?: Firmware;
@@ -42,7 +44,7 @@ export interface Host {
   qemuFound: boolean; imageToolFound: boolean; qemuVersion?: string; accelerators: string[];
   dataDirectory: string; isoDirectory?: string;databasePath?:string;
 }
-export interface LabSnapshot { machines: Machine[]; templates: Template[]; settings: Settings; host: Host; images?: SystemImage[]; catalogue: BuiltinTemplate[]; isoLibrary?:IsoLibrary; sshKey?:SshKeyInfo; }
+export interface LabSnapshot { machines: Machine[]; templates: Template[]; settings: Settings; host: Host; images?: SystemImage[]; catalogue: BuiltinTemplate[]; isoLibrary?:IsoLibrary; sshKey?:SshKeyInfo; restorePointOperation?: RestorePointOperation; }
 export const families: {id: Family; name: string; mark: string; description: string; url: string}[] = [
   {id: 'windows', name: 'Windows', mark: 'W', description: 'Windows 10 / Server · 图形桌面', url: 'https://www.microsoft.com/software-download/windows10'},
   {id: 'ubuntu', name: 'Ubuntu', mark: 'U', description: '桌面应用与开发环境', url: 'https://ubuntu.com/download/desktop'},

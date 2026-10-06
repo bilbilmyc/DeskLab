@@ -6,8 +6,11 @@ import {existingInstance} from '../server/startup';
 
 test('an occupied browser port does not make DeskLab exit, and reopening uses the same data instance',async()=>{
   const root=await mkdtemp(join(tmpdir(),'desklab-startup-'));
+  // This test covers the app lifecycle, not host QEMU discovery. The state API
+  // otherwise starts local QEMU probes whose latency depends on the machine.
+  await Bun.write(join(root,'lab.json'),JSON.stringify({version:1,settings:{qemuPath:join(root,'no-qemu'),accelerator:'tcg'},machines:[],templates:[]}));
   const occupied=Bun.serve({hostname:'127.0.0.1',port:0,fetch:()=>new Response('another application')});
-  const env={...process.env,LAB_DATA_DIR:root,LAB_PORT:String(occupied.port),LAB_OPEN:'0'};
+  const env={...process.env,LAB_DATA_DIR:root,LAB_PORT:String(occupied.port),LAB_OPEN:'0',LAB_TRAY:'0'};
   const child=Bun.spawn([process.execPath,resolve('server/index.ts')],{env,stdout:'ignore',stderr:'pipe'});
   let second:Bun.Subprocess|undefined;
   try {
@@ -28,6 +31,7 @@ test('an occupied browser port does not make DeskLab exit, and reopening uses th
     expect((await Bun.file(join(root,'instance.json')).json()).pid).toBe(child.pid);
     expect((await fetch(origin+'/api/app/quit',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status).toBe(403);
     const state=await(await fetch(origin+'/api/state')).json();
+    expect(state.host.qemuFound).toBe(false);expect(state.host.imageToolFound).toBe(false);
     const browse={method:'POST',headers:{'Content-Type':'application/json','x-lab-token':state.token},body:JSON.stringify({kind:'iso',path:root})};
     const files=await fetch(origin+'/api/files/list',browse);
     expect(files.ok).toBe(true);expect((await files.json()).path).toBe(root);
@@ -44,12 +48,14 @@ test('an occupied browser port does not make DeskLab exit, and reopening uses th
     second?.kill();child.kill();await child.exited;if(second)await second.exited;occupied.stop(true);
     await rm(root,{recursive:true,force:true});
   }
-},15000);
+// Windows process creation can synchronously take 10s per launch. Budget both
+// launches here; the readiness and exit checks above retain their own bounds.
+},30000);
 
 test('startup errors leave a readable log and release the data lock',async()=>{
   const root=await mkdtemp(join(tmpdir(),'desklab-startup-error-'));
   await Bun.write(join(root,'lab.json'),'{broken configuration');
-  const child=Bun.spawn([process.execPath,resolve('server/index.ts')],{env:{...process.env,LAB_DATA_DIR:root,LAB_PORT:'0',LAB_OPEN:'0'},stdout:'ignore',stderr:'pipe'});
+  const child=Bun.spawn([process.execPath,resolve('server/index.ts')],{env:{...process.env,LAB_DATA_DIR:root,LAB_PORT:'0',LAB_OPEN:'0',LAB_TRAY:'0'},stdout:'ignore',stderr:'pipe'});
   try {
     expect(await child.exited).toBe(1);
     expect(await Bun.file(join(root,'owner.lock')).exists()).toBe(false);

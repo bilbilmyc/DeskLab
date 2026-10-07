@@ -8,7 +8,7 @@
 2. **与 VMware 的真实差距有两处，均不可关闭。**
    - **驱动形态**：VMware 的桥接是自研签名 NDIS 协议驱动 vmnetbridge（网卡属性页里的"VMware Bridge Protocol"）直接绑定物理网卡，混杂模式收发并改写以太网头，让每个 guest 以独立 MAC 出现在网段。DeskLab 自研内核桥驱动不现实（EV 代码签名、WHQL、长期安全维护都是产品级负担）；ms_bridge + TAP 在有线上能达到同样的二层效果，只是组成不同。
    - **Wi-Fi**：802.11 常规驱动不支持混杂模式，AP 只向关联站点的 MAC 投递帧；VMware 为此实现了专门的无线 MAC 翻译层。Windows 原生网桥对 Wi-Fi 的支持本来就不稳定。**结论：Wi-Fi 桥接明确不做，无线用户继续 NAT。**
-3. **2026 年出现新的实质风险，重启前必须先评估。** 安全聚合源在 2026-09 报告：OpenVPN 2.5.0–2.7.6 on Windows（使用 tap-windows6 驱动）存在可由构造 DOMAIN 相关报文触发的越界写。若缺陷在驱动层，则任何使用 tap-windows6 的软件——包括把 QEMU 接入 TAP 的桥接场景——都可能暴露。本轮**未能独立核实该公告的 CVE 编号**；可核实的相关先例包括 [Black Hat USA 2024 对 OpenVPN Windows 驱动的研究](https://www.pritunl.com)与 2025-12 OpenVPN 修复的两个严重漏洞（CVE-2025-13086 / CVE-2025-12106）。同时 tap-windows6 自 9.27.0（2024-03）后没有新版本，OpenVPN 官方主线已转向 L3 的 Wintun（Wintun 无以太帧，不能用于桥接）。**重启桥接的第一步是核实公告、确认是否存在修复版本、评估 DeskLab 场景（能向宿主发局域网报文者）的暴露面；这一步不过关就不应把驱动重新打进安装包。**
+3. **2026 年安全公告已核实，不阻断桥接路线（2026-10-07 复核）。** 公告为 [CVE-2026-81738](https://community.openvpn.net/openvpn/wiki/SecurityAnnouncements)：OpenVPN 2.5.0–2.7.6 on Windows 的**用户态**函数 `write_dhcp_search_str()` 临时缓冲区单字节越界，由构造的 DOMAIN-SEARCH DHCP 条目触发（`dev tap` + dhcp-options 场景），OpenVPN 2.7.7（2026-09-07）已修复，**tap-windows6 驱动本身无需新版本**。DeskLab 的桥接用法只把 QEMU 接入 TAP 设备、不运行 openvpn.exe，也不启用驱动的 DHCP 模拟 ioctl，该代码路径不存在；相关先例（[Black Hat USA 2024 OpenVPN Windows 研究](https://www.pritunl.com)、2025-12 的 CVE-2025-13086 / CVE-2025-12106）同样位于 OpenVPN 用户态而非驱动。保留的注意事项：tap-windows6 自 9.27.0（2024-03）后无新版本、OpenVPN 主线转向 L3 的 Wintun（无以太帧不能桥接），驱动长期无维护是供应链层面的持续风险；若未来出现真正的驱动层公告，需立即重估。
 4. **"类 VMware 体验"存在一个成本低一个数量级的替代：局域网发布（NAT + hostfwd 绑定非回环地址）。** slirp 原生支持 `hostfwd=tcp:0.0.0.0:<port>-:<port>`；guest 虽然没有独立 LAN IP，但满足"局域网设备直接访问虚拟机里的服务"这一主要诉求。当前阻塞点全在自身代码：`server/network.ts` 的 `networkArguments()` 把绑定地址硬编码为 `127.0.0.1`，`PortMappings` 的 `hostAddress` 固定、`hasForward` 正则只认回环。需要的改动是：绑定地址参数化、每实例"允许局域网访问"开关（默认关闭，保持现有安全边界承诺）、安装期防火墙规则（安装器本就提权，可为 QEMU 程序建立受限规则）、端口占用检测改为按 0.0.0.0 探测。不做二层、不装驱动、不动宿主网络栈，风险面远小于桥接。本轮真实客体探测已证明 NAT 数据面正常（见下），LAN 侧唯一新变量是防火墙。
 5. **建议路线排序**：(a) 先做"局域网发布"开关（小改动、独立价值、可先行发布）——**2026-10-07 已实现**：实例级 `lanPublish` 开关，自定义端口映射按实例改绑 `0.0.0.0`，SSH 转发保持仅本机，见 [网络与 SSH](../network-and-ssh.md)；(b) 有线桥接若重启，按既有集成路线走，先补第 3 条的安全评估，再完成暂停时未通过的验收链；(c) Wi-Fi 桥接不做；(d) SoftEther 维持备选记录，不新增投入。
 
@@ -47,6 +47,6 @@ VMware Workstation 在 Windows 宿主上的桥接由内核态 `vmnetbridge`（"V
 
 ## 后续验证优先级
 
-1. **局域网发布 PoC**：一台运行中的 Linux 实例开启映射到 0.0.0.0，从局域网另一设备 curl 其服务；关闭开关即不可达；确认防火墙行为与所需的规则形态。
-2. **tap-windows6 公告核实**：确定受影响版本与修复版本是否存在；无修复版本则桥接路线降级为"仅按需手动安装驱动"或继续暂停。
-3. （若前两项通过且决定重启）按 [自动桥接集成路线](automatic-bridge-integration.md) 的验证顺序执行：隔离 TAP 连续三轮建桥/撤销 → 独立 QEMU 二层流量 → 真实 LAN DHCP/SSH 与宿主网络恢复 → 多环境矩阵。
+1. **局域网发布 PoC**：一台运行中的 Linux 实例开启映射到 0.0.0.0，从局域网另一设备 curl 其服务；关闭开关即不可达；确认防火墙行为与所需的规则形态。（开关与绑定已实现，差跨设备实测。）
+2. ~~**tap-windows6 公告核实**~~ **已完成（2026-10-07）**：CVE-2026-81738 位于 OpenVPN 用户态、2.7.7 已修复、驱动无需更新、DeskLab 用法不暴露，见结论 3。桥接路线的安全门槛通过，剩余为验收链。
+3. （若决定重启）按 [自动桥接集成路线](automatic-bridge-integration.md) 的验证顺序执行：隔离 TAP 连续三轮建桥/撤销 → 独立 QEMU 二层流量 → 真实 LAN DHCP/SSH 与宿主网络恢复 → 多环境矩阵。

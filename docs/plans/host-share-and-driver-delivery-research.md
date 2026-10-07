@@ -87,7 +87,9 @@ slirp 的 `smb=` 选项由 QEMU 进程拉起宿主上的 Samba `smbd` 并导出�
 1. **SMB 通路实测（零代码）**：手工在宿主建一个 SMB 共享与受限测试账户，在一台现有 Linux 测试机内 `mount -t cifs //10.0.2.2/...`、一台现有 Windows 测试机内 `net use \\10.0.2.2\...`，验证 SMB2/3 协商、NTLM 认证、大文件与并发读写。不通过则挂载式主线降级，v1 只做传输通道。
    - 2026-10-07 进展（真实 Debian 13.6 与 Windows 10 22H2 客体，`.runtime/checks/guest-probe-*/`、`guest-smb-*/`）：两类客体经 slirp NAT 到 `10.0.2.2:445` 的 TCP 连通均已实测成立（`SMB445=OPEN`，宿主 LanmanServer 监听回环）；v1 文件通道也在同一批客体里完成了浏览、下载与上传回传的真机验证（Linux 用 `curl`，Windows 用 `curl.exe` + PowerShell）。
    - 2026-10-07 SMB 协商验证（`scripts/checks/guest-smb-probe.ts`）：Debian 客体内内核 CIFS 客户端以 `vers=3.0` 挂载 `//10.0.2.2/...`，dmesg 显示完整完成 SMB3 方言协商与 NTLM 会话建立，错误凭据在**认证层**被拒（`SessSetup = -13`、`STATUS_ACCESS_DENIED`），无网络层错误。基础挂载不需要 mount.cifs 助手（内核即可）；客体在线 apt 不可靠（DNS 返回 IPv6 优先而 slirp IPv6 受限）。
-   - 2026-10-07 介质核查（对本地固定 ISO 做原始字节扫描，方法学用 `curl_*.deb` 目录记录验证）：`cifs-utils` 仅在 Rocky 9.8 minimal DVD 上（`cifs-utils-7.5-1.el9.x86_64.rpm`），Debian 13.6 DVD-1 与 Ubuntu 24.04.5 live-server ISO 均不含 → 离线安装配方只在 Rocky 预装 cifs-utils；Debian/Ubuntu 依赖内核原生挂载（已验证可行）。**剩余未验证**：宿主建共享与专用账户（需管理员）、有效凭据下的实挂载与读写。
+   - 2026-10-07 介质核查（对本地固定 ISO 做原始字节扫描，方法学用 `curl_*.deb` 目录记录验证）：`cifs-utils` 仅在 Rocky 9.8 minimal DVD 上（`cifs-utils-7.5-1.el9.x86_64.rpm`），Debian 13.6 DVD-1 与 Ubuntu 24.04.5 live-server ISO 均不含 → 离线安装配方只在 Rocky 预装 cifs-utils；Debian/Ubuntu 依赖内核原生挂载（已验证可行）。
+   - **2026-10-07 最终验收通过**：管理员建立临时受限账户 `desklabprobe` 与作用域共享（验收后已删除），Debian 客体内以有效凭据 SMB3 挂载 `//10.0.2.2/desklabprobe` 成功（rc=0），读取宿主文件、写入客体文件并在宿主侧确认——双向读写闭环（`scripts/checks/guest-smb-mount-probe.ts`）。挂载路线至此全部验证：TCP 445 → SMB3 协商 → 有效凭据 NTLM 会话 → 挂载 → 读写。
+   - **重要修正**：无 mount.cifs 助手时，util-linux `mount` 会把 `user=` 当作自身"允许用户挂载"语义剥离，凭据根本不会发送（此前"错误凭据被拒"实为匿名会话被拒，判读有误）；内核直挂必须使用 `username=`/`password=` 长选项。产品化时客体侧命令须遵循此约定，或在模板预装 cifs-utils。
    - 同轮副产物：该模板的 `serial-getty@ttyS0` 未输出登录提示（系统正常启动），客体自动化优先走 tty1 + QMP send-key 或 SSH。
 2. **模板侧准备**：Linux preseed 增加 `cifs-utils`；Windows 客户机验证 `net use` 持久化与开机自动重连。
 3. **virtio-win 管线预演**：固定一个 stable ISO 版本 + SHA-256 试下载校验；在一台 Windows 模板上试装（`DriverPaths` 与静默 MSI 两种），确认无对话框、无强制重启。

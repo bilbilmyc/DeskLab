@@ -24,6 +24,8 @@
 
 2026-09-12 16:30 的复核：操作 `68ca0d24-3b21-4bef-bea8-daa78a9d64fd` 成功清理了前两次残留；新测试发现 Windows 仅加入一块 TAP，随后自动撤销成功。实时枚举确认测试 TAP/桥均不存在，以太网 `ms_implat` 仍为 false。因此恢复链路已有实际成功证据，但完整建桥仍未通过。后续助手在菜单实际提供 `addtobridge` 时才补加遗漏成员，并要求一次授权中连续三轮创建/撤销都成功；尚不能以该代码已实现代替本机验证结果。
 
+2026-10-07 复核（用户授权 UAC，测试组件已全部清理）：最新助手构建（`DeskLab.NetworkSetup-a2d36bbce3c8fdcf`）执行 `isolated` 动作，**一次授权内连续三轮隔离建桥/撤销全部通过**，status=`validated`。期间再次出现"配置网桥时出现异常错误"系统弹窗，成员修复逻辑（`addtobridge` 补救）自动恢复并继续——该路径首次得到实战验证。随后完成验收链第二步：两块隔离 TAP 组桥、真实 QEMU 客体经 tap 后端接入，客体与宿主网桥地址双向 ping 通过且 ARP 表项确认二层转发（`scripts/checks/guest-bridge-l2-probe.ts`、测试床 `scripts/checks/lan-l2-testbed.ps1`）。经验：网桥赋静态 IP 前先关接口 DHCP。物理网卡入桥（真实 LAN DHCP/SSH 与宿主网络恢复）仍未执行，需单独确认时机；tap-windows6 安全公告已核实不阻断（CVE-2026-81738 位于 OpenVPN 用户态，见 [桥接可行性调研](plans/vmware-style-bridging-research.md)）。
+
 ## 已确认的 Windows 行为
 
 1. Shell 的 `createbridge`、`removefrombridge` 都能按 canonical verb 发现；不能硬编码中文标签或菜单编号。

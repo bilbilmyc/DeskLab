@@ -4,7 +4,7 @@
 
 ## 结论
 
-1. **"VMware 式桥接"在有线以太网上等价可达，且仓库里已有一条走到接近终点的路线。** 目标拆开是：虚拟机以独立 MAC 直接出现在物理局域网、从局域网 DHCP 取得地址、局域网设备可直接访问。既有实现的组成是官方签名 TAP 驱动（tap-windows6 9.27.0）+ Windows 原生网桥（ms_bridge）+ Shell `createbridge` 命令自动化 + 独立提权助手与回滚，代码保留在仓库（`native/windows/NetworkSetup`、`server/network-setup`）。2022 年暂停时的差距是**验收未完成**（隔离 TAP 建桥未连续三轮通过、真实 LAN 数据流未测），不是可行性未知。本轮复核：`netsh bridge create` 在 Windows 11 / Server 2025 上依然不存在，官方建桥仍只有 GUI 入口，Shell verb 自动化仍是免自研驱动的唯一自动化路径，该判断在 2026-10 继续成立。
+1. **"VMware 式桥接"在有线以太网上等价可达，且仓库里已有一条走到接近终点的路线。** 目标拆开是：虚拟机以独立 MAC 直接出现在物理局域网、从局域网 DHCP 取得地址、局域网设备可直接访问。既有实现的组成是官方签名 TAP 驱动（tap-windows6 9.27.0）+ Windows 原生网桥（ms_bridge）+ Shell `createbridge` 命令自动化 + 独立提权助手与回滚，代码保留在仓库（`native/windows/NetworkSetup`、`server/network-setup`）。暂停时（2026-09）的差距是**验收未完成**（隔离 TAP 建桥未连续三轮通过、真实 LAN 数据流未测），不是可行性未知；2026-10-07 已补齐隔离三轮与二层流量两段验收（见"后续验证优先级"），仅剩物理网卡段。本轮复核：`netsh bridge create` 在 Windows 11 / Server 2025 上依然不存在，官方建桥仍只有 GUI 入口，Shell verb 自动化仍是免自研驱动的唯一自动化路径，该判断在 2026-10 继续成立。
 2. **与 VMware 的真实差距有两处，均不可关闭。**
    - **驱动形态**：VMware 的桥接是自研签名 NDIS 协议驱动 vmnetbridge（网卡属性页里的"VMware Bridge Protocol"）直接绑定物理网卡，混杂模式收发并改写以太网头，让每个 guest 以独立 MAC 出现在网段。DeskLab 自研内核桥驱动不现实（EV 代码签名、WHQL、长期安全维护都是产品级负担）；ms_bridge + TAP 在有线上能达到同样的二层效果，只是组成不同。
    - **Wi-Fi**：802.11 常规驱动不支持混杂模式，AP 只向关联站点的 MAC 投递帧；VMware 为此实现了专门的无线 MAC 翻译层。Windows 原生网桥对 Wi-Fi 的支持本来就不稳定。**结论：Wi-Fi 桥接明确不做，无线用户继续 NAT。**
@@ -55,4 +55,7 @@ VMware Workstation 在 Windows 宿主上的桥接由内核态 `vmnetbridge`（"V
    - 2026-10-07 日志判别器发现：slirp 对 hostfwd 连接**保留原始源地址**——宿主回环发起的请求在客体日志中显示 `10.0.2.2`（经虚拟网卡显示该网卡 IP），从宿主 LAN IP 进入的显示 `192.168.5.72`；据此可精确判别请求来源，真实跨设备访问将显示来源设备的 LAN 地址（如 NAS 的 `192.168.5.60`）。
    - **2026-10-07 跨设备入站验证通过（闭环）**：局域网设备访问 `http://192.168.5.72:28080/`，客体 http.server 日志记录 `192.168.5.43 - "GET /" 200`——外部设备经物理网卡 → 宿主防火墙（既有 QEMU 放行规则生效）→ `0.0.0.0` hostfwd → slirp → 客体完整往返。手机首次失败的定位：宿主 ARP 表中 `192.168.5.57 @WLAN = Unreachable`，属无线客户端隔离/终端侧问题，非产品链路缺陷。局域网发布方向的验证至此完成：绑定、非回环转发、防火墙、跨设备入站、客体出站全部有真机证据。
 2. ~~**tap-windows6 公告核实**~~ **已完成（2026-10-07）**：CVE-2026-81738 位于 OpenVPN 用户态、2.7.7 已修复、驱动无需更新、DeskLab 用法不暴露，见结论 3。桥接路线的安全门槛通过，剩余为验收链。
-3. （若决定重启）按 [自动桥接集成路线](automatic-bridge-integration.md) 的验证顺序执行：隔离 TAP 连续三轮建桥/撤销 → 独立 QEMU 二层流量 → 真实 LAN DHCP/SSH 与宿主网络恢复 → 多环境矩阵。
+3. 验收链进展（2026-10-07，用户授权 UAC，测试组件已全部清理）：
+   - **隔离 TAP 连续三轮建桥/撤销 ✅**：最新助手构建执行 `isolated` 动作，一次授权内三轮全部通过，status=`validated`（期间出现一次"配置网桥时出现异常错误"系统弹窗，成员修复逻辑自动恢复并继续——暂停前实现的 `addtobridge` 补救路径首次得到实战验证）。
+   - **独立 QEMU 二层流量 ✅**：两块隔离 TAP 组桥（宿主网桥 10.99.0.1/24），真实 Debian 客体经 QEMU tap 后端接入 TAP-A（10.99.0.2），双向 ping 全通、客体 ARP 表记录网桥 MAC（`scripts/checks/guest-bridge-l2-probe.ts`，测试床 `scripts/checks/lan-l2-testbed.ps1`）。注意：网桥接口赋静态 IP 前需先关 DHCP；成员漏加时按 canonical verb 修复有效。
+   - **剩余**：真实 LAN DHCP/SSH 与宿主网络恢复（物理网卡入桥，需单独确认执行时机，会影响宿主联网）→ 多环境矩阵（不同 Windows 构建、网卡名、共存场景）。

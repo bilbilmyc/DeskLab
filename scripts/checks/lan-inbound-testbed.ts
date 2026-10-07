@@ -20,8 +20,10 @@ const root = resolve('.runtime/checks', `lan-inbound-${Date.now()}`);
 const interfaces = networkInterfaces();
 // Interface aliases seen by Bun don't match the localized display name, so
 // prefer the subnet where the always-on LAN NAS (192.168.5.60) lives.
-const candidates = Object.values(interfaces).flat().filter((address): address is {family:'IPv4';internal:false;address:string} => address?.family === 'IPv4' && !address.internal);
-const lan = candidates.find(address => address.address.startsWith('192.168.5.'))?.address ?? candidates[0]?.address;
+const candidates = Object.values(interfaces).flat()
+  .filter(address => address?.family === 'IPv4' && !address.internal)
+  .map(address => address!.address);
+const lan = candidates.find(address => address.startsWith('192.168.5.')) ?? candidates[0];
 if (!lan) throw new Error('本机没有可用的局域网 IPv4 地址');
 const template: Template = {id: crypto.randomUUID(), name: 'debian testbed', family: 'debian', diskGB: 40, createdAt: new Date().toISOString()};
 await mkdir(join(root, 'data', 'templates', template.id), {recursive:true});

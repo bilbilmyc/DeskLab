@@ -48,6 +48,9 @@ VMware Workstation 在 Windows 宿主上的桥接由内核态 `vmnetbridge`（"V
 ## 后续验证优先级
 
 1. **局域网发布 PoC**：一台运行中的 Linux 实例开启映射到 0.0.0.0，从局域网另一设备 curl 其服务；关闭开关即不可达；确认防火墙行为与所需的规则形态。
-   - 2026-10-07 单机近似证据（`scripts/checks/lan-publish-probe.ts`，真实 Lab 流程：updateNetwork 设开关 → PortMappings 存映射 → start）：宿主经自身局域网地址（本机为 198.18.0.1 虚拟网卡）连映射端口取到客体 SSH banner，证明 `0.0.0.0` 绑定与非回环转发路径成立。**跨设备实测与防火墙行为仍待真机**。
+   - 2026-10-07 单机近似证据（`scripts/checks/lan-publish-probe.ts`，真实 Lab 流程：updateNetwork 设开关 → PortMappings 存映射 → start）：宿主经自身局域网地址连映射端口取到客体 SSH banner，证明 `0.0.0.0` 绑定与非回环转发路径成立。
+   - 2026-10-07 客体出站证据（`scripts/checks/guest-lan-egress-probe.ts`，本机物理网卡 192.168.5.72，目标为局域网常驻 NAS 192.168.5.60）：客体 ping NAS 0% 丢包、HTTP `http://192.168.5.60:5666` 返回 200（页面标题“飞牛 fnOS”）、NAS 445 端口可达——NAT 出站经真实物理网卡完全成立。
+   - 2026-10-07 防火墙审计（只读）：三个配置文件均启用、入站默认阻止；本机已存在针对开发环境 `qemu-system-x86_64.exe` 的入站放行规则（TCP+UDP、任意端口、专用+公用），系此前实验时用户确认产生。**开发机上局域网设备已可直接连入 lanPublish 映射**；正式安装（QEMU 位于安装目录）仍需安装期规则或首启提示。
+   - 入站跨设备实测：测试床 `scripts/checks/lan-inbound-testbed.ts`（lanPublish 映射 28080→客体 8080 的 python3 http.server），待局域网设备访问确认。
 2. ~~**tap-windows6 公告核实**~~ **已完成（2026-10-07）**：CVE-2026-81738 位于 OpenVPN 用户态、2.7.7 已修复、驱动无需更新、DeskLab 用法不暴露，见结论 3。桥接路线的安全门槛通过，剩余为验收链。
 3. （若决定重启）按 [自动桥接集成路线](automatic-bridge-integration.md) 的验证顺序执行：隔离 TAP 连续三轮建桥/撤销 → 独立 QEMU 二层流量 → 真实 LAN DHCP/SSH 与宿主网络恢复 → 多环境矩阵。

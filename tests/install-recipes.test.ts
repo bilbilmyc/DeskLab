@@ -87,6 +87,8 @@ test('Rocky uses the matching DVD label, a minimal server and only the fresh gue
   expect(kickstart).toContain('ignoredisk --only-use=sda');
   expect(kickstart).toContain('clearpart --all --initlabel --drives=sda');
   expect(kickstart).toContain('@^minimal-environment');
+  // cifs-utils ships on the pinned minimal DVD; the other offline media omit it.
+  expect(kickstart).toContain('\ncifs-utils\n');
   expect(kickstart).toContain('\npoweroff\ncdrom\n');
   expect(kickstart).toContain('%post --erroronfail');
   expect(kickstart).toContain('%onerror\n');

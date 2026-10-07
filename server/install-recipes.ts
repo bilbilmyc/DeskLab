@@ -179,6 +179,9 @@ cdrom
 @^minimal-environment
 openssh-server
 curl
+# Only Rocky's pinned offline media ships cifs-utils; guests mount host SMB
+# shares with it. Debian/Ubuntu kernels mount CIFS without the helper.
+cifs-utils
 %end
 %post --erroronfail --log=/root/desklab-kickstart.log
 set -eu

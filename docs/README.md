@@ -8,6 +8,7 @@
 - [第一次使用](getting-started.md)：安装、创建、关机和自己的模板。
 - [ISO 与系统支持](iso-guide.md)：必需文件、固定版本、目录外 ISO、错配处理与校验。
 - [网络与 SSH](network-and-ssh.md)：仅 NAT、本机连接和密钥授权。
+- [宿主目录共享](host-shares.md)：把本机文件夹按实例共享给虚拟机，浏览、下载与上传。
 - [Docker 与存储](docker-and-storage.md)：独立/外部引擎、Compose、端口和数据备份。
 - [安装、迁移与分发](distribution.md)：安装包组成和数据位置。
 

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { FileListing, FilePickerKind } from '../shared/file-picker';
 
 const input = z.object({
-  kind: z.enum(['iso', 'disk', 'directory','compose'], {error: '请选择文件类型或文件夹'}),
+  kind: z.enum(['iso', 'disk', 'directory','share-directory','compose'], {error: '请选择文件类型或文件夹'}),
   path: z.string({error: '请输入文件夹路径'}).trim().max(32768, '路径太长，请选择较短的路径')
     .regex(/^[^\x00-\x1f]*$/, '路径不能包含控制字符').optional(),
 }).strict();

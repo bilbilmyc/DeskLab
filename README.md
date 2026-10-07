@@ -15,6 +15,7 @@
 - 首次自动安装 Ubuntu Server、Debian Server、Rocky Server、Windows 10 和 Windows Server；也可导入已有磁盘或手动安装其他 ISO。
 - 选择 ISO 后识别内部系统标识，错配就地提示；创建前再次校验，避免产生失败的空实例。
 - NAT 网络、默认 Ed25519 SSH 密钥、虚拟机 TCP/UDP 端口映射。
+- 宿主目录文件通道：把本机文件夹按实例共享，系统内通过带令牌的地址浏览、下载和上传文件。[宿主目录共享](docs/host-shares.md)
 - 独立 Docker 引擎或连接已有 Linux Docker context；容器、镜像、受限 Compose、日志、命令执行与端口展示。
 - Windows 通知区域托盘、SQLite 元数据，以及保存在本机的虚拟磁盘和数据卷。
 
@@ -81,7 +82,7 @@
 ssh -i 'D:\apps\DeskLab\data\ssh\id_ed25519' -o IdentitiesOnly=yes -p 2222 root@127.0.0.1
 ```
 
-虚拟机和内置 Docker 的新映射仅绑定本机 `127.0.0.1`，暂不提供局域网发布开关。详情见 [网络与 SSH](docs/network-and-ssh.md)。
+虚拟机和内置 Docker 的新映射默认仅绑定本机 `127.0.0.1`；虚拟机实例可在“连接与网络”中按需开启局域网访问，让局域网设备直接使用映射端口。详情见 [网络与 SSH](docs/network-and-ssh.md)。
 
 关闭浏览器或控制台标签不会关闭虚拟机或服务。点击实例电源按钮后，需要“确认关机”；退出 DeskLab 前保存工作并关闭实例，再通过页面或托盘退出。独立 Docker 引擎会正常停止；外部 Docker Desktop 本身继续运行。异常强杀进程不等同于正常关机。
 
@@ -116,7 +117,7 @@ bun run installer
 - 支持的自动安装版本固定，不能将任意 ISO 当作对应模板使用。Windows 镜像为官方评估版，DeskLab 不提供 Windows 商业许可证。
 - CPU、内存和磁盘可在创建时调整；扩大虚拟磁盘后，可能仍需在客体中扩展分区和文件系统。
 - Compose 支持预构建镜像、命名卷和固定端口；不支持本地 build、宿主目录挂载、特权容器、外部网络/卷及 secrets/configs。
-- 尚不支持桥接、局域网发布、GPU/USB 直通、音频、宿主共享目录和 Windows 11 的完整 TPM/Secure Boot 初始化。
+- 尚不支持桥接、GPU/USB 直通、音频、把宿主目录挂载为虚拟机盘符（当前以带令牌的文件通道提供浏览、下载和上传）和 Windows 11 的完整 TPM/Secure Boot 初始化。端口映射可按实例开放给局域网，虚拟机本身不获得局域网独立地址。
 - 单用户本地应用，管理接口仅监听回环，使用 Host、Origin 和请求令牌保护；不提供远程管理或多用户权限体系。
 
 ## 文档与第三方组件

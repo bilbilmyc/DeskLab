@@ -7,6 +7,7 @@ export function networkArguments(network:MachineNetwork|undefined,sshPort?:numbe
   if(network?.mode==='bridged')throw new Error('桥接功能已停用，请先在连接与网络中切换为 NAT');
   if(mac&&!/^02(?::[a-f0-9]{2}){5}$/.test(mac))throw new Error('无效的虚拟网卡地址');
   const hardware=`model=e1000${mac?`,mac=${mac}`:''}`;
+  const bind=network?.lanPublish?'0.0.0.0':'127.0.0.1';
   for(const p of ports)if(!['tcp','udp'].includes(p.protocol)||!Number.isInteger(p.hostPort)||p.hostPort<1024||p.hostPort>65535||!Number.isInteger(p.targetPort)||p.targetPort<1||p.targetPort>65535)throw new Error('无效的端口映射');
-  return ['-nic',`user,${hardware}${sshPort?`,hostfwd=tcp:127.0.0.1:${sshPort}-:22`:''}${ports.map(p=>`,hostfwd=${p.protocol}:127.0.0.1:${p.hostPort}-:${p.targetPort}`).join('')}`];
+  return ['-nic',`user,${hardware}${sshPort?`,hostfwd=tcp:127.0.0.1:${sshPort}-:22`:''}${ports.map(p=>`,hostfwd=${p.protocol}:${bind}:${p.hostPort}-:${p.targetPort}`).join('')}`];
 }

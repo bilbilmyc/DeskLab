@@ -1,10 +1,10 @@
 'use client';
 import {useState} from 'react';
-import {Monitor,Play,Power,RotateCcw,Trash2,Layers,Disc3,Square,LoaderCircle,MoreHorizontal,ArrowUpRight,History} from 'lucide-react';
+import {Monitor,Play,Power,RotateCcw,Trash2,Layers,Disc3,Square,LoaderCircle,MoreHorizontal,ArrowUpRight,History,Share2} from 'lucide-react';
 import type {Machine} from '@/shared/types';
 import {Modal,OsIcon,Status} from './primitives';
 
-export function MachineList({machines,busy,invoke,confirm,open,connect,restorePoints}:{machines:Machine[];connect:(vm:Machine)=>void;restorePoints:(vm:Machine)=>void;busy:string;invoke:(id:string,operation:string)=>void;confirm:(vm:Machine,operation:string)=>void;open:(vm:Machine)=>void}) {
+export function MachineList({machines,busy,invoke,confirm,open,connect,restorePoints,shares}:{machines:Machine[];connect:(vm:Machine)=>void;restorePoints:(vm:Machine)=>void;shares:(vm:Machine)=>void;busy:string;invoke:(id:string,operation:string)=>void;confirm:(vm:Machine,operation:string)=>void;open:(vm:Machine)=>void}) {
   const [toolsId,setToolsId]=useState('');
   const tools=machines.find(vm=>vm.id===toolsId);
   const live=(vm:Machine)=>Boolean(vm.session)||['running','starting','stopping'].includes(vm.state);
@@ -20,6 +20,7 @@ export function MachineList({machines,busy,invoke,confirm,open,connect,restorePo
   })}</div>{tools&&<Modal title={`${tools.name} · 更多操作`} close={()=>setToolsId('')}><p className="field-help">{live(tools)?'保存模板、恢复和删除前，请先正常关机。':'环境已关闭，可以保存为模板或管理磁盘。'}</p><div className="machine-maintenance">
     <button className="button secondary" disabled={live(tools)||!!busy} onClick={()=>request(tools,'template')}><Layers size={17}/>保存为模板</button>
     <button className="button secondary" onClick={()=>{setToolsId('');restorePoints(tools);}}><History size={17}/>还原点{tools.restorePoints?.length ? ` (${tools.restorePoints.length})` : ''}</button>
+    <button className="button secondary" onClick={()=>{setToolsId('');shares(tools);}}><Share2 size={17}/>宿主目录共享{tools.shares?.length ? ` (${tools.shares.length})` : ''}</button>
     <button className="button secondary" disabled={live(tools)||!tools.templateId||!!busy} onClick={()=>request(tools,'reset')}><RotateCcw size={17}/>恢复初始状态</button>
     {tools.isoPath&&<button className="button secondary" disabled={live(tools)||!!busy} onClick={()=>{invoke(tools.id,'eject');setToolsId('');}}><Disc3 size={17}/>弹出 ISO</button>}
     {live(tools)&&<button className="button danger" disabled={!!busy} onClick={()=>request(tools,'force-stop')}><Square size={17}/>强制关闭</button>}

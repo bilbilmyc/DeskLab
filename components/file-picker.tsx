@@ -42,9 +42,9 @@ function FilePicker({request, list, finish}: {request: Request; list: ListFiles;
     } finally {if(current===revision.current)setLoading(false);}
   }, [list, request.kind]);
   useEffect(() => {void load(request.path);return () => {revision.current++;};}, [load, request.path]);
-  const directory=request.kind==='directory';
+  const directory=request.kind==='directory'||request.kind==='share-directory';
   const choice=directory?listing?.path:selected;
-  return <Modal title={directory?'选择 ISO 文件夹':request.kind==='iso'?'选择 ISO 安装盘':request.kind==='compose'?'选择 Compose 文件':'选择虚拟磁盘'} description={directory?'打开存放 ISO 的文件夹，再点击“使用此文件夹”。':'浏览这台电脑，选择已有文件即可，无需上传或复制。'} close={()=>finish(null)}>
+  return <Modal title={request.kind==='share-directory'?'选择共享文件夹':directory?'选择 ISO 文件夹':request.kind==='iso'?'选择 ISO 安装盘':request.kind==='compose'?'选择 Compose 文件':'选择虚拟磁盘'} description={request.kind==='share-directory'?'选择要共享给虚拟机的本机文件夹。':directory?'打开存放 ISO 的文件夹，再点击“使用此文件夹”。':'浏览这台电脑，选择已有文件即可，无需上传或复制。'} close={()=>finish(null)}>
     <div className="file-picker">
       <form className="file-picker-address" onSubmit={event=>{event.preventDefault();void load(address.trim() || undefined);}}>
         <label htmlFor="file-picker-address">当前位置</label>

@@ -104,6 +104,14 @@ const server = bindAvailable(port,listenPort=>Bun.serve<WSData>({
             return pointAction[3] === 'restore' ? lab.restorePoints.restore(machineId, pointId, body) : lab.restorePoints.remove(machineId, pointId, body);
           }));
         }
+        const shareAction=url.pathname.match(/^\/api\/machines\/([^/]+)\/shares(?:\/([^/]+)\/delete)?$/);
+        if (shareAction) {
+          const machineId = idInput.parse(shareAction[1]);
+          return json(await lab.exclusive(async () => {
+            if (exitRequested) throw new Error('DeskLab 正在退出');
+            return shareAction[2] ? lab.removeShare(machineId, idInput.parse(shareAction[2])) : lab.addShare(machineId, body);
+          }));
+        }
         if(url.pathname==='/api/diagnostics/check')return json(await diagnostics.check(body?.refresh === true));
         if(url.pathname==='/api/diagnostics/export')return json(await diagnostics.export());
         const managedAction=url.pathname.match(/^\/api\/docker\/managed\/(enable|start|stop|force-stop|select|backup|restore|rebuild|configure)$/);

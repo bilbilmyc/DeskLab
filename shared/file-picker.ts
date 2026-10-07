@@ -1,4 +1,4 @@
-export type FilePickerKind = 'iso' | 'disk' | 'directory' | 'compose';
+export type FilePickerKind = 'iso' | 'disk' | 'directory' | 'share-directory' | 'compose';
 
 export interface FileListing {
   path: string;

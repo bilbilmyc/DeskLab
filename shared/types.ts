@@ -9,11 +9,16 @@ export interface Installation {
   phase: 'pending'|'preparing'|'installing'|'installed'|'caching'|'ready'|'failed';
   message: string; startedAt: string; shutdownConfirmed?: boolean;
 }
+export interface MachineShare {
+  id: string; name: string; hostPath: string; readOnly: boolean; createdAt: string;
+}
+export interface ShareChannel { port: number; token: string; }
 export interface Machine {
   id: string; name: string; family: Family; memory: number; cpus: number; diskGB: number;
   templateId?: string; backingTemplateId?: string; isoPath?: string; createdAt: string; state: VmState; error?: string;
   network?:MachineNetwork; sshPublicKey?:string; sshKeyFingerprint?:string;
   sshPort?: number; sshError?: string;
+  shares?: MachineShare[]; shareChannel?: ShareChannel;
   diskGeneration?: string; session?: {pid?: number; qmpPort: number; vncPort: number; eventPort?: number; sshPort?: number};
   backingResolved?: boolean; firmware?: Firmware;
   installation?: Installation;

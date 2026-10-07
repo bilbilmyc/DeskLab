@@ -137,3 +137,21 @@ textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:5px;
 .restore-point-empty{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:1.5rem .75rem;font-size:.8rem;color:var(--muted)}
 .restore-point-confirmation h3{font-size:1rem;margin:1rem 0 .5rem}.restore-point-confirmation p{font-size:.85rem;overflow-wrap:anywhere}
 @media(max-width:540px){.restore-point-create{align-items:stretch;flex-direction:column}.restore-point-list li{align-items:flex-start;flex-wrap:wrap}.restore-point-actions{margin-left:auto}.restore-point-identity{flex-basis:100%}.restore-point-empty{align-items:flex-start}}
+
+.shares-modal{width:min(680px,calc(100vw - 24px))}
+.share-list{max-height:40vh;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:6px}
+.share-row{padding:.75rem;border-bottom:1px solid var(--line)}
+.share-row:last-child{border-bottom:0}
+.share-identity{display:flex;align-items:center;gap:.6rem}
+.share-identity>div{flex:1;min-width:0}.share-identity strong{font-size:.85rem;overflow-wrap:anywhere}.share-identity small{display:block;color:var(--muted);font-size:.73rem;margin-top:.3rem;overflow-wrap:anywhere}
+.share-mode{font-size:.68rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.15rem .55rem;flex-shrink:0}
+.share-commands{margin-top:.5rem}
+.share-commands code{display:block;font-size:.75rem;overflow-wrap:anywhere;color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:.45rem .6rem}
+.share-commands .inline{margin-top:.45rem;flex-wrap:wrap}
+.share-state{display:block;color:var(--muted);font-size:.72rem;margin-top:.3rem}
+.share-add{border-top:1px solid var(--line);margin-top:1rem;padding-top:.5rem}
+.share-add .form-grid{grid-template-columns:minmax(120px,.4fr) minmax(0,1fr)}
+.share-folder .inline{gap:.5rem;margin-top:.4rem}.share-folder input{margin:0}
+.share-readonly{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.9rem}.share-readonly input{width:auto;margin:0}
+.network-fields .lan-publish{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.9rem}.network-fields .lan-publish input{width:auto;margin:0}
+@media(max-width:540px){.share-add .form-grid{grid-template-columns:1fr}.share-folder .inline{flex-direction:column;align-items:stretch}}

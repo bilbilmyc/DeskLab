@@ -6,13 +6,14 @@ import type { Host, IsoLibrary, IsoResource, LabSnapshot, Machine, Template } fr
 import { Store, type Journal } from './store';
 import { processAlive } from './process-lock';
 import { executable, run, freePort, qmp, watchQmp, type QmpEvent } from './qemu';
-import { createInput, importInput, settingsInput, saveTemplateInput, updateTemplateInput, qemuValue, networkInput } from './validation';
+import { createInput, importInput, settingsInput, saveTemplateInput, updateTemplateInput, qemuValue, networkInput, shareInput } from './validation';
 import { uefiDrives } from './firmware';
 import { systemImages } from './bundle';
 import { builtinDefinition, migrateBuiltinTemplates, templateCatalogue, templateDiskExists } from './catalog';
 import { isoSources } from './iso-sources';
 import { IsoDownloads } from './iso-downloads';
 import { Installations } from './installations';
+import { Shares } from './shares';
 import {allocateSshPort, ensureSshForward} from './ssh-network';
 import {networkArguments} from './network';
 import {storedPorts,portAvailable,managementPorts} from './ports';
@@ -28,11 +29,13 @@ export class Lab {
   private hostCache?: {time: number; value: Host};
   private shuttingDown = false;
   private installations: Installations;
+  readonly shares: Shares;
   readonly sshKeys:SshKeys;
   readonly restorePoints: RestorePoints;
   private downloads = new IsoDownloads(isoSources.flatMap(source=>source.url ? [{id:source.id,file:source.file,url:source.url,bytes:source.bytes,sha256:source.sha256}] : []));
   constructor(public store: Store, private defaultIsoDirectory?: string) {
     this.restorePoints = new RestorePoints(this);
+    this.shares = new Shares(store, id => this.runtime.has(id));
     this.sshKeys=new SshKeys(store.root);
     this.installations=new Installations(store,(id,event,body)=>this.exclusive(async()=>{
       const vm=this.get(id), install=vm.installation;
@@ -68,6 +71,7 @@ export class Lab {
               try {vm.sshPort=await ensureSshForward(runtime.qmpPort,vm.sshPort,this.reservedSshPorts(vm.id));vm.session!.sshPort=vm.sshPort;vm.sshError=undefined;}
               catch(error){vm.session!.sshPort=undefined;vm.sshError=error instanceof Error?error.message:String(error);}
             }
+            if (vm.shares?.length) this.ensureShares(vm);
           }
         } catch {
           this.runtime.get(vm.id)?.closeEvents?.();this.runtime.delete(vm.id);
@@ -103,7 +107,7 @@ export class Lab {
       } catch {}
       if (runtime.child) continue;
       try {await this.checkedRuntime(id);const status=await qmp(runtime.qmpPort,'query-status') as {running:boolean};if(this.get(id).state==='error'&&status.running){this.get(id).state='running';this.get(id).error=undefined;await this.store.save();}}
-      catch {if (runtime.pid && !processAlive(runtime.pid)) {this.runtime.delete(id); const vm=this.get(id); vm.state='stopped';vm.session=undefined;await this.store.save();await this.finishInstallation(id);}}
+      catch {if (runtime.pid && !processAlive(runtime.pid)) {this.runtime.delete(id); this.shares.stop(id); const vm=this.get(id); vm.state='stopped';vm.session=undefined;await this.store.save();await this.finishInstallation(id);}}
     }
   }
   private async observe(id: string, runtime: Runtime) {
@@ -127,7 +131,7 @@ export class Lab {
     await qmp(runtime.qmpPort,'quit');
     for(let n=0;n<150&&processAlive(runtime.pid);n++)await Bun.sleep(100);
     if(processAlive(runtime.pid))throw new Error('客体已退出，但虚拟化进程尚未结束，已停止自动重启以保护磁盘');
-    runtime.closeEvents?.();this.runtime.delete(id);vm.session=undefined;vm.state='stopped';await this.store.save();
+    runtime.closeEvents?.();this.runtime.delete(id);this.shares.stop(id);vm.session=undefined;vm.state='stopped';await this.store.save();
     if(vm.installation?.phase==='installed')await this.finishInstallation(id);
     else if(restart&&!this.shuttingDown)await this.start(id);
     } finally { runtime.handlingShutdown=false; }
@@ -252,8 +256,36 @@ export class Lab {
   async updateNetwork(id:string,input:unknown) {
     const vm=this.get(id),network=networkInput.parse(input);
     const old=vm.network??{mode:'nat'};
-    if(old.mode!==network.mode)this.requireStopped(id);
+    // QEMU cannot edit a hostfwd in place; bind-address changes need a relaunch.
+    if(old.mode!==network.mode||!!old.lanPublish!==!!network.lanPublish)this.requireStopped(id);
     await this.checkedNetwork(network,id);vm.network=network;await this.store.save();return vm;
+  }
+  private ensureShares(vm: Machine) {
+    try { this.shares.ensure(vm); }
+    catch (error) { vm.error = `宿主目录共享通道未能启动：${error instanceof Error ? error.message : String(error)}`; }
+  }
+  private async checkedShareDirectory(path: string) {
+    if (!isAbsolute(path)) throw new Error('请选择要共享的文件夹，或填写完整路径');
+    let target: string;
+    try { target = await realpath(path); } catch { throw new Error('这个文件夹不存在或无法访问，请重新选择'); }
+    if (!(await stat(target)).isDirectory()) throw new Error('共享路径必须是文件夹');
+    const inside = relative(this.store.root, target);
+    if (!inside || (!inside.startsWith('..') && !isAbsolute(inside))) throw new Error('不能共享 DeskLab 数据目录本身，请选择其他文件夹');
+    return target;
+  }
+  async addShare(id: string, input: unknown) {
+    const vm = this.get(id), value = shareInput.parse(input);
+    if ((vm.shares ?? []).some(share => share.name.toLowerCase() === value.name.toLowerCase())) throw new Error('此环境已有同名的共享，请换一个名称');
+    const hostPath = await this.checkedShareDirectory(value.hostPath);
+    vm.shares = [...(vm.shares ?? []), {id: crypto.randomUUID(), name: value.name, hostPath, readOnly: value.readOnly, createdAt: new Date().toISOString()}];
+    if (this.runtime.has(id)) this.ensureShares(vm);
+    await this.store.save(); return vm;
+  }
+  async removeShare(id: string, shareId: string) {
+    const vm = this.get(id);
+    if (!(vm.shares ?? []).some(share => share.id === shareId)) throw new Error('共享不存在');
+    vm.shares = (vm.shares ?? []).filter(share => share.id !== shareId);
+    await this.store.save(); return vm;
   }
   async start(id: string) {
     if (this.store.needsRecovery) throw new Error('磁盘事务尚未恢复，已阻止启动；请重试或重新打开 DeskLab');
@@ -286,7 +318,7 @@ export class Lab {
     const network=installing?{mode:'nat' as const}:vm.network;
     const adapter=await this.checkedNetwork(network,id);
     const mappings=storedPorts(this.store,vm.id).filter(p=>p.ownerType==='vm');
-    for(const mapping of mappings)if(!await portAvailable(mapping.hostPort,mapping.protocol))throw new Error(`映射“${mapping.label}”的端口 ${mapping.hostPort} 已被占用`);
+    for(const mapping of mappings)if(!await portAvailable(mapping.hostPort,mapping.protocol,vm.network?.lanPublish===true))throw new Error(`映射“${mapping.label}”的端口 ${mapping.hostPort} 已被占用`);
     const sshPort=vm.family==='windows'||network?.mode==='bridged'?undefined:await allocateSshPort(vm.sshPort,[...this.reservedSshPorts(vm.id),vncPort,qmpPort,...(eventPort?[eventPort]:[])]);
     vm.sshPort=sshPort;vm.sshError=undefined;
     const args = ['-name', `DeskLab-${vm.id}`, '-machine', uefi ? 'q35,pic=off' : 'pc', '-accel', acceleration, '-cpu', uefi && vm.family === 'windows' ? 'Westmere' : 'max', '-m', String(vm.memory), '-smp', String(vm.cpus),
@@ -304,6 +336,8 @@ export class Lab {
     if(installing){vm.installation!.phase='installing';vm.installation!.message='正在自动安装系统并配置登录，完成后会自动进入系统。';}
     vm.state = 'starting'; vm.error = undefined; vm.session = {vncPort,qmpPort,eventPort,sshPort}; await this.store.save();
     if(this.shuttingDown){vm.state='stopped';vm.session=undefined;await this.store.save();throw new Error('DeskLab 正在退出，已取消启动');}
+    // The guest share channel must listen before QEMU boots so early scripts can fetch it.
+    if (vm.shares?.length) this.ensureShares(vm);
     // QEMU first probes relative keyboard-map names in its working directory.
     // C:\Windows contains an en-US directory, which otherwise shadows the
     // bundled en-us map when DeskLab is launched from an arbitrary shortcut.
@@ -319,6 +353,7 @@ export class Lab {
       void this.exclusive(async () => {
         if (this.runtime.get(id) !== runtime) return;
         this.runtime.delete(id);
+        this.shares.stop(id);
         const current = this.get(id); current.session=undefined;
         current.state = code === 0 ? 'stopped' : 'error';
         if (code !== 0) current.error = runtime.log || `QEMU 退出，代码 ${code}`;
@@ -470,7 +505,7 @@ export class Lab {
     await this.deleteRecord('templates',id);
   }
   private async deleteRecord(kind: 'machines'|'templates',id: string) {
-    if(kind==='machines')this.installations.stop(id);
+    if(kind==='machines'){this.installations.stop(id);this.shares.stop(id);}
     const record: Journal={type:'delete',kind,id,transaction:crypto.randomUUID()};
     await mkdir(this.store.managed('trash'),{recursive:true}); await this.store.journal(record);
     try {
@@ -483,7 +518,7 @@ export class Lab {
   async shutdown() {
     this.shuttingDown=true;
     try { await this.downloads.shutdown(); }
-    finally { await this.exclusive(()=>this.shutdownProcesses());this.installations.shutdown(); }
+    finally { await this.exclusive(()=>this.shutdownProcesses());this.installations.shutdown();this.shares.shutdown(); }
   }
   private async shutdownProcesses() {
     await Promise.all([...this.runtime.entries()].map(async ([id,runtime]) => {

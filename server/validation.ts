@@ -5,7 +5,7 @@ export const firmware = z.enum(['bios', 'uefi']).default('bios');
 export const label = z.string().trim().min(1, '请输入名称').max(64).regex(/^[^\x00-\x1f]+$/, '名称不能包含控制字符');
 export const memoryInput = z.number().int().min(512).max(65536);
 export const cpusInput = z.number().int().min(1).max(32);
-export const networkInput=z.object({mode:z.literal('nat').default('nat')}).strict();
+export const networkInput=z.object({mode:z.literal('nat').default('nat'),lanPublish:z.boolean().optional()}).strict();
 const templateDetails = {
   description: z.string().trim().max(500).optional(),
   memory: memoryInput.optional(), cpus: cpusInput.optional(),
@@ -27,5 +27,14 @@ export const importInput = z.object({name: label, family, firmware, path: z.stri
 export const saveTemplateInput = z.object({name: label, ...templateDetails});
 export const updateTemplateInput = z.object({name: label.optional(), ...templateDetails}).strict()
   .refine(value => Object.values(value).some(item => item !== undefined), '请填写要修改的模板设置');
+export const shareName = z.string().trim()
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,31}$/, '共享名称以字母或数字开头，只能包含字母、数字、点、下划线和连字符，最长 32 位')
+  .refine(value => !/[. ]$/.test(value), '共享名称不能以点或空格结尾');
+export const shareInput = z.object({
+  name: shareName,
+  hostPath: z.string().trim().min(2, '请选择要共享的文件夹').max(32768, '路径太长，请选择较短的路径')
+    .regex(/^[^\x00-\x1f]*$/, '路径不能包含控制字符'),
+  readOnly: z.boolean().default(false),
+}).strict();
 export const idInput = z.string().uuid();
 export function qemuValue(path: string) { return path.replaceAll(',', ',,'); }

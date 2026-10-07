@@ -1,6 +1,8 @@
 // Legacy bridge fields remain readable so old disks/settings are not discarded.
 // New requests accept NAT only (server/validation.ts).
-export interface MachineNetwork {mode:'nat'|'bridged';adapterId?:string;address?:string;}
+// lanPublish binds this machine's custom port mappings to 0.0.0.0 so LAN
+// devices can reach guest services; the automatic SSH forward stays loopback.
+export interface MachineNetwork {mode:'nat'|'bridged';adapterId?:string;address?:string;lanPublish?:boolean;}
 export interface BridgeAdapter {id:string;name:string;description:string;bridged:boolean;}
 export interface NetworkCapabilities {adapters:BridgeAdapter[];message?:string;}
 export interface PhysicalAdapter {id:string;name:string;description:string;status:string;wireless:boolean;}

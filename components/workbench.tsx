@@ -11,6 +11,7 @@ import { CreateMachine } from './create-machine';
 import { MachineList } from './machine-list';
 import {RestorePointsPanel} from './restore-points';
 import {RestorePointStatus} from './restore-point-status';
+import {SharesPanel} from './shares';
 import {WorkspaceHeading} from './workspace-heading';
 import { SettingsPanel } from './settings';
 import { TemplateLibrary } from './template-library';
@@ -32,6 +33,7 @@ export function Workbench() {
   const [confirmExit,setConfirmExit]=useState(false);
   const [connectionId,setConnectionId]=useState('');
   const [restorePointMachineId,setRestorePointMachineId]=useState('');
+  const [shareMachineId,setShareMachineId]=useState('');
   const [page, setPage] = useState<Page>('machines'), [creating, setCreating] = useState(false), [family, setFamily] = useState<Family>();
   const [initialTemplateId,setInitialTemplateId]=useState<string>();
   const [initialIsoPath,setInitialIsoPath]=useState<string>();
@@ -64,6 +66,7 @@ export function Workbench() {
   const transfers=data?.isoLibrary?.resources.filter(item=>downloading(item.download)) ?? [];
   const current = data?.machines.find(x => x.id === active);
   const restorePointMachine = data?.machines.find(vm => vm.id === restorePointMachineId);
+  const shareMachine = data?.machines.find(vm => vm.id === shareMachineId);
   const connection=data?.machines.find(x=>x.id===connectionId);
   const browsingMachines = page === 'machines' && !current;
   const titles = {machines: '测试环境', templates: '模板库', settings: '本机设置',docker:'Docker 容器',ports:'端口映射'};
@@ -90,7 +93,7 @@ export function Workbench() {
             <div className="resource-strip"><div><Box size={19}/><span>正在运行<strong>{live.length}<small> / {data.machines.length} 个环境</small></strong></span></div><div><Cpu size={19}/><span>已分配 CPU<strong>{live.reduce((n,x) => n+x.cpus,0)}<small> / {data.host.threads} 核</small></strong></span></div><div><MemoryStick size={19}/><span>已分配内存<strong>{(live.reduce((n,x) => n+x.memory,0)/1024).toFixed(1)}<small> / <Bytes value={data.host.totalMemory}/></small></strong></span></div><div className="engine-status"><span className={data.host.qemuFound ? 'online-dot' : 'offline-dot'}/><span>{data.host.qemuFound ? '虚拟化引擎已找到' : '首次使用，准备运行引擎'}<button onClick={() => openSettings('computer')}>{data.host.qemuFound ? '查看本机配置' : '前往本机设置'} <ArrowUpRight size={13}/></button></span></div></div>
             <div className="machine-board"><div className="list-toolbar"><div className="filters"><button className={filter === 'all' ? 'selected' : ''} onClick={() => setFilter('all')}>全部环境 <span>{data.machines.length}</span></button><button className={filter === 'windows' ? 'selected' : ''} onClick={() => setFilter('windows')}>Windows</button><select aria-label="筛选 Linux 发行版" value={['ubuntu','debian','rocky','linux'].includes(filter) ? filter : ''} onChange={e => setFilter(e.target.value || 'all')}><option value="">Linux 发行版</option>{families.filter(x => x.id !== 'windows').map(x => <option value={x.id} key={x.id}>{x.name}</option>)}</select><select aria-label="筛选环境状态" value={machineState} onChange={e=>setMachineState(e.target.value)}><option value="all">全部状态</option><option value="running">运行中</option><option value="stopped">已关闭</option><option value="error">启动异常</option></select></div><label className="search"><Search size={16}/><input aria-label="搜索环境" placeholder="搜索环境…" value={search} onChange={e => setSearch(e.target.value)}/></label></div>
             <section className="machine-results" aria-label="环境列表" tabIndex={0}>
-            {filtered.length ? <MachineList restorePoints={vm=>setRestorePointMachineId(vm.id)} connect={vm=>setConnectionId(vm.id)} machines={filtered} busy={busy || (!serviceReady ? 'disconnected' : '')} invoke={invoke} open={open} confirm={(vm, operation) => {clearError();setConfirmation({id: vm.id, name: vm.name, operation, kind:'machines'});}}/> : data.machines.length ? <Empty title="没有匹配的环境" description="试试其他名称或系统筛选条件。"/> : <div className="first-environment"><div className="first-copy"><span className="first-symbol"><Terminal size={29}/></span><h2>先选一个系统，其他交给 DeskLab。</h2><p>系统模板已准备好时，无需自己安装。<br/>给环境起个名字，就能打开桌面或终端。</p><button className="button primary" disabled={!serviceReady||!!busy} onClick={() => create()}><Plus size={17}/>创建第一个环境</button><span className="quiet-note">运行在本机 · 通过浏览器访问</span></div><div className="first-options"><div className="section-head"><span className="eyebrow">系统自带模板</span></div>{families.slice(0,4).map(os => <button key={os.id} disabled={!serviceReady||!!busy} onClick={() => create(os.id)}><span className={`os-mini ${os.id}`}>{os.mark}</span><span><strong>{os.name}</strong><small>{os.id==='windows'?'图形桌面':'Server 终端版'}</small></span><Plus size={17}/></button>)}</div></div>}
+            {filtered.length ? <MachineList restorePoints={vm=>setRestorePointMachineId(vm.id)} shares={vm=>setShareMachineId(vm.id)} connect={vm=>setConnectionId(vm.id)} machines={filtered} busy={busy || (!serviceReady ? 'disconnected' : '')} invoke={invoke} open={open} confirm={(vm, operation) => {clearError();setConfirmation({id: vm.id, name: vm.name, operation, kind:'machines'});}}/> : data.machines.length ? <Empty title="没有匹配的环境" description="试试其他名称或系统筛选条件。"/> : <div className="first-environment"><div className="first-copy"><span className="first-symbol"><Terminal size={29}/></span><h2>先选一个系统，其他交给 DeskLab。</h2><p>系统模板已准备好时，无需自己安装。<br/>给环境起个名字，就能打开桌面或终端。</p><button className="button primary" disabled={!serviceReady||!!busy} onClick={() => create()}><Plus size={17}/>创建第一个环境</button><span className="quiet-note">运行在本机 · 通过浏览器访问</span></div><div className="first-options"><div className="section-head"><span className="eyebrow">系统自带模板</span></div>{families.slice(0,4).map(os => <button key={os.id} disabled={!serviceReady||!!busy} onClick={() => create(os.id)}><span className={`os-mini ${os.id}`}>{os.mark}</span><span><strong>{os.name}</strong><small>{os.id==='windows'?'图形桌面':'Server 终端版'}</small></span><Plus size={17}/></button>)}</div></div>}
             <div className="workflow-note"><Layers size={19}/><div><strong>装好软件，保存成自己的模板。</strong><p>正常关机后点击“保存为模板”，下次从“我的模板”直接创建。</p></div><button onClick={() => {setTemplateGroup('custom');selectPage('templates');}}>查看我的模板 <ArrowUpRight size={15}/></button></div>
             <details className="quick-guide" open={!data.machines.length}><summary>第一次使用？三步就能开始</summary><ol className="template-howto"><li><span>1</span><div><strong>点击“创建环境”</strong><p>从系统自带选择 Windows 或 Linux。</p></div></li><li><span>2</span><div><strong>起名字，创建并启动</strong><p>电脑配置保持默认即可。</p></div></li><li><span>3</span><div><strong>在浏览器里使用</strong><p>用完正常关机；想保留配置就保存为模板。</p></div></li></ol></details>
             </section></div>
@@ -112,6 +115,7 @@ export function Workbench() {
     </form></Modal>}
     {connection&&<ConnectionInfo key={connection.id} machine={connection} sshKey={data?.sshKey} prepareKey={()=>action<SshKeyInfo>('ssh/key')} busy={!!busy} save={network=>action(`machines/${connection.id}/network`,network)} close={()=>setConnectionId('')}/>}
     {restorePointMachine && <RestorePointsPanel machine={restorePointMachine} busy={!!busy} action={action} close={()=>setRestorePointMachineId('')}/>}
+    {shareMachine && <SharesPanel machine={shareMachine} busy={!!busy} action={action} close={()=>setShareMachineId('')} pickDirectory={async()=>(await pickImage('share-directory')).path}/>}
     {filePicker}
   </div>;
 }
